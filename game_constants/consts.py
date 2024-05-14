@@ -1,0 +1,9 @@
+"""
+Constants for the project.
+"""
+
+ZOOM_FACTOR = 2
+GRAPHICAL_TILE_SIZE = 16 * ZOOM_FACTOR
+TICK_RATE = 60
+TICK_DURATION_MS = int(1 / TICK_RATE * 1000)
+SOUND = False

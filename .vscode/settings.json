@@ -1,0 +1,68 @@
+{
+    "python.defaultInterpreterPath": "./.venv/bin/python",
+    "[python]": {
+        "editor.defaultFormatter": "ms-python.black-formatter",
+        "editor.formatOnSave": true,
+        "editor.stickyScroll.enabled": true,
+        "editor.formatOnSaveMode": "file",
+    },
+    // Comment anchors
+    "commentAnchors.tagHighlights.enabled": true,
+    "commentAnchors.workspace.excludeFiles": "**/{node_modules,.git,.idea,target,out,build,bin,obj,dist,vendor,.exe,.pyc,.venv}/**/*",
+    "commentAnchors.tags.anchors": {
+        "ANCHOR": {
+            "iconColor": "#A1B825",
+            "highlightColor": "#A1B825",
+            "scope": "file"
+        },
+        "TODO": {
+            "iconColor": "#FF8C00",
+            "highlightColor": "#FF8C00",
+            "scope": "workspace",
+            "styleComment": true,
+            "isBold": true
+        },
+        "FIXME": {
+            "iconColor": "#e63d35",
+            "highlightColor": "#e63d35",
+            "backgroundColor": "#F0F00A",
+            "styleComment": true,
+            "isBold": false,
+            "isItalic": false,
+            "scope": "workspace"
+        },
+        "STUB": {
+            "iconColor": "purple",
+            "highlightColor": "#BA68C8",
+            "scope": "file"
+        },
+        "NOTE": {
+            "iconColor": "#ADD8E6",
+            "highlightColor": "#ADD8E6",
+            "scope": "file",
+            "styleComment": true,
+            "isBold": false,
+            "isItalic": true
+        },
+        "REVIEW": {
+            "iconColor": "#5ecf19",
+            "highlightColor": "#5ecf19",
+            "styleComment": true,
+            "isBold": false,
+            "isItalic": false,
+            "scope": "workspace"
+        },
+        "SECTION": {
+            "iconColor": "blurple",
+            "highlightColor": "#896afc",
+            "scope": "workspace",
+            "behavior": "region"
+        },
+        "LINK": {
+            "iconColor": "#2ecc71",
+            "highlightColor": "#2ecc71",
+            "scope": "workspace",
+            "behavior": "link"
+        }
+    }
+}
