@@ -24,10 +24,10 @@ class Game:
     def __init__(self, player_count=4, mapchoose="map_courte.tmx", fog=False):
         pygame.init()  # pylint: disable=no-member
         self.player_count = player_count
-        # self.screen = pygame.display.set_mode(
-        #     flags=pygame.FULLSCREEN  # pylint: disable=no-member
-        # )  # pylint: disable=no-member
-        self.screen = pygame.display.set_mode((1600, 900))  # pylint: disable=no-member
+        self.screen = pygame.display.set_mode(
+            flags=pygame.FULLSCREEN  # pylint: disable=no-member
+        )  # pylint: disable=no-member
+        # self.screen = pygame.display.set_mode((1600, 900))  # pylint: disable=no-member
         self.rect_fullscreen = pygame.Rect(
             0, 0, self.screen.get_width(), self.screen.get_height()
         )

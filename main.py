@@ -23,10 +23,10 @@ class Main:
     def __init__(self) -> None:
         pygame.init()  # pylint: disable=no-member
         pygame.font.init()
-        # self.screen = pygame.display.set_mode(
-        #     flags=pygame.FULLSCREEN  # pylint: disable=no-member
-        # )  # pylint: disable=no-member
-        self.screen = pygame.display.set_mode((1600, 1000))
+        self.screen = pygame.display.set_mode(
+            flags=pygame.FULLSCREEN  # pylint: disable=no-member
+        )  # pylint: disable=no-member
+        # self.screen = pygame.display.set_mode((1600, 1000))
         self.clock = pygame.time.Clock()
 
         self.white = (255, 255, 255)
