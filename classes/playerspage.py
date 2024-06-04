@@ -9,7 +9,6 @@ class PlayersPage:
         self.screen = screen
         self.font = pygame.font.Font(None, 48)
         self.player_count_options = [
-            "1 Player",
             "2 Players",
             "3 Players",
             "4 Players",

@@ -13,5 +13,7 @@ from .playerspage import PlayersPage
 from .end_turn import EndTurn
 from .rule_page import RulePage
 from .log_event import LogEvent
+from .gamemode_page import GamemodePage
+from .online_page import OnlinePage
 
 from .map_object import Pawn, Enemy

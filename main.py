@@ -1,10 +1,13 @@
 import logging
+import multiprocessing as mp
 
 import pygame
 from rich.logging import RichHandler
 
-from classes import CreditsPage, PlayersPage, MapPage, RulePage
+from classes import CreditsPage, PlayersPage, MapPage, RulePage, GamemodePage, OnlinePage
 from game import Game
+from server import Server
+from queue import Queue
 
 # program-wide logging formatter
 root_logger = logging.getLogger()
@@ -44,6 +47,8 @@ class Main:
         self.in_main_game = False
         self.map_chosen = None
         self.fog = False
+        
+        self.players = Queue()
 
     def draw_options(self, options):
         self.screen.fill(self.black)
@@ -84,14 +89,19 @@ class Main:
 
     def run(self):
         running = True
+        server:Server = Server()
         tutorial_page = RulePage(self.screen)
         credits_page = CreditsPage(self.screen)
         players_page = PlayersPage(self.screen)
         map_page = MapPage(self.screen)
+        gamemode_page = GamemodePage(self.screen)
+        online_page = OnlinePage(self.screen)
         choosing_players = False
         choosing_map = False
+        choosing_gamemode = False
         tutorial = False
         exiting_main_game = False
+        online = False
 
         while running:
             for event in pygame.event.get():
@@ -99,7 +109,7 @@ class Main:
                     running = False
                 elif event.type == pygame.MOUSEBUTTONDOWN:  # pylint: disable=no-member
                     mouse_pos = pygame.mouse.get_pos()
-                    if not choosing_players and not choosing_map and not tutorial:
+                    if not choosing_players and not choosing_map and not tutorial and not choosing_gamemode and not online:
                         clicked_option_index = self.on_click(mouse_pos)
                         if clicked_option_index != -1:
                             selected_text = self.options[clicked_option_index]
@@ -108,9 +118,9 @@ class Main:
                                 self.remove_all_hitboxes()
                                 self.current_state = "Tutorial"
                             elif selected_text == "New Game":
-                                choosing_players = True
+                                choosing_gamemode = True
                                 self.remove_all_hitboxes()
-                                self.current_state = "Players"
+                                self.current_state = "Gamemode"
                             elif selected_text == "Credits":
                                 self.current_state = "Credits"
                                 self.remove_all_hitboxes()
@@ -141,6 +151,30 @@ class Main:
                                 choosing_players = False
                                 self.current_state = "Map"
                                 choosing_map = True
+                                
+                        elif choosing_gamemode:
+                            clicked_option_index = self.on_click(mouse_pos)
+                            if clicked_option_index != -1:
+                                selected_text = gamemode_page.gamemode_options[clicked_option_index]
+                                if selected_text == "Solo": # normal game, no changes
+                                    self.player_count = 1
+                                    self.current_state = "Map"
+                                    choosing_map = True
+                                    choosing_gamemode = False
+                                elif selected_text == "Host a game": # consider player selection as online hosted game state
+                                    self.current_state = "Online"
+                                    online = True
+                                    choosing_gamemode = False
+                                    # TODO: Implement hosting a game
+                                elif selected_text == "Join a game":
+                                    self.player_count = 1
+                                    self.current_state = "Map"
+                                    choosing_map = True
+                                    choosing_gamemode = False
+                                    # TODO: Implement a way to join a game (ip address, etc.)
+                        
+                        elif online:
+                            pass
 
                 elif (
                     event.type == pygame.KEYDOWN  # pylint: disable=no-member
@@ -158,6 +192,10 @@ class Main:
                     elif self.current_state == "Tutorial":
                         tutorial = False
                         self.current_state = "Lobby"
+                    elif self.current_state == "Gamemode": # back to lobby when in online/offline page
+                        self.current_state = "Lobby"
+                    elif self.current_state == "Online":
+                        server.stop()
 
             self.screen.fill(self.black)
 
@@ -167,6 +205,8 @@ class Main:
                 tutorial_page.draw()
             elif self.current_state == "Credits":
                 credits_page.draw()
+            elif self.current_state == "Gamemode": # Online/Offline page selection
+                self.draw_options(gamemode_page.gamemode_options)
             elif self.current_state == "Players":
                 self.draw_options(players_page.player_count_options)
             elif self.current_state == "Map":
@@ -175,6 +215,21 @@ class Main:
                 game = Game(self.player_count, self.map_chosen, self.fog)
                 game.run()
                 exiting_main_game = True
+            elif self.current_state == "Online":
+                process = mp.Process(target=server.run, args=(self.players,))
+                process.start()
+                p_list = []
+                try:
+                    p_list = self.players.get(False)
+                    print(p_list)
+                except Exception as e:
+                    # Handle empty queue here
+                    online_page.draw(p_list)
+                else:
+                    online_page.draw(p_list)
+                    self.players.task_done()
+                
+                
 
             if exiting_main_game:
                 pygame.time.delay(1000)  # Wait 1 second before going back to the lobby
