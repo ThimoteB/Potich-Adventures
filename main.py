@@ -4,10 +4,10 @@ import multiprocessing as mp
 import pygame
 from rich.logging import RichHandler
 
-from classes import CreditsPage, PlayersPage, MapPage, RulePage, GamemodePage, OnlinePage, WaitingPage
+from classes import CreditsPage, PlayersPage, MapPage, RulePage, GamemodePage, WaitingPage, LobbyPage
 from game import Game
 
-import socket
+import socket, json
 
 from game_constants.consts import PORT, HOST
 
@@ -51,14 +51,17 @@ class Main:
         self.fog = False
         
         self.host = ""
+        self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.players = []
 
-    def draw_options(self, options):
-        self.screen.fill(self.black)
+    def draw_options(self, options, do_not_clear=False, manual_offset=0):
+        if not do_not_clear:
+            self.screen.fill(self.black)
         self.hitboxes = []
 
         screen_width, screen_height = self.screen.get_size()
         total_height = len(options) * 70
-        y = (screen_height - total_height) // 2
+        y = ((screen_height - total_height) // 2) + manual_offset
 
         for i, option in enumerate(options):
             text = self.font.render(option, True, self.white)
@@ -75,6 +78,8 @@ class Main:
     
     def draw_input(self, input):
         screen_width, screen_height = self.screen.get_size()
+        total_height = 2*70
+        y = (screen_height - total_height) // 2
         box_width = 200
         box_height = 64
         input_box = pygame.Rect((screen_width // 2) - (box_width // 2), (screen_height // 2) - (box_height // 2), box_width, box_height)
@@ -83,6 +88,9 @@ class Main:
         color = color_inactive
         text = ''
         active = False
+        
+        sample_text = self.font.render(input, True, self.white)
+        sample_rect = sample_text.get_rect(center=(screen_width // 2, y))
         
         done:bool = False
         while not done:
@@ -116,6 +124,7 @@ class Main:
             width = max(200, txt_surface.get_width()+10)
             input_box.w = width
             # Blit the text.
+            self.screen.blit(sample_text, sample_rect)
             self.screen.blit(txt_surface, (input_box.x+5, input_box.y+5))            
             # Blit the input_box rect.
             pygame.draw.rect(self.screen, color, input_box, 2)
@@ -146,7 +155,7 @@ class Main:
         players_page = PlayersPage(self.screen)
         map_page = MapPage(self.screen)
         gamemode_page = GamemodePage(self.screen)
-        online_page = OnlinePage(self.screen)
+        lobby_page = LobbyPage(self.screen)
         choosing_players = False
         choosing_map = False
         tutorial = False
@@ -217,10 +226,13 @@ class Main:
                                     self.current_state = "Online"
                                     online = True
                                     choosing_gamemode = False
-                                    # TODO: Implement a way to join a game (ip address, etc.)
                         
                         elif online:
-                            pass
+                            clicked_option_index = self.on_click(mouse_pos)
+                            if clicked_option_index != -1:
+                                selected_text = lobby_page.button_text[clicked_option_index]
+                                if selected_text == "Start the game":
+                                    self.current_state = "Start"
 
                 elif (
                     event.type == pygame.KEYDOWN  # pylint: disable=no-member
@@ -262,22 +274,49 @@ class Main:
                 game.run()
                 exiting_main_game = True
             elif self.current_state == "Online":
-                self.host = self.draw_input(["Enter the IP address of the server"])
+                self.host = self.draw_input("Enter the IP address of the server :")
                 if not self.host:
                     online = False
                     self.current_state = "Gamemode"
                 # try to reach the server
                 WaitingPage(self.screen, self.host).draw()
                 pygame.display.flip()
-                sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-                result = sock.connect_ex((self.host,PORT))
+                
+                result = self.sock.connect_ex((self.host,PORT))
                 if result == 0:
                     print("Server connection okay")
+                    self.current_state = "OnlineLobby"
+                    LobbyPage(self.screen).draw()
                 else:
                     print("Connection failed")
-                sock.close()
+                    self.sock.close()
+                    
+            # Connection etablished : waiting for other players
+            elif self.current_state == "OnlineLobby":
+                # wait for the server to send the number of players
+                self.sock.setblocking(False)
+                try:
+                    data = self.sock.recv(1024)
+                    data = json.loads(data.decode())
+                    print(data["players"])
+                    self.players = []
+                    for player in data["players"]:
+                        self.players.append((player[0], player[1]))
+                except:
+                    pass
+                self.sock.setblocking(True)
+                lobby_page.draw(self.players)
+                self.draw_options([lobby_page.button_text], True, 100 + 64 * len(self.players))
+                pygame.display.flip()
                 
-                
+        
+            elif self.current_state == "Start":
+                print("Starting the game")
+                data = {
+                    "start": True
+                }
+                data = json.dumps(data)
+                self.sock.send(data.encode())
 
             if exiting_main_game:
                 pygame.time.delay(1000)  # Wait 1 second before going back to the lobby
