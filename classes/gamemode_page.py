@@ -10,8 +10,7 @@ class GamemodePage:
         self.font = pygame.font.Font(None, 48)
         self.gamemode_options = [
             "Solo",
-            "Host a game",
-            "Join a game"
+            "Online"
         ]  # Game mode options
         self.selected_gamemode = 0  # Choix actuellement sélectionné
 

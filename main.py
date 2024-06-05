@@ -4,10 +4,12 @@ import multiprocessing as mp
 import pygame
 from rich.logging import RichHandler
 
-from classes import CreditsPage, PlayersPage, MapPage, RulePage, GamemodePage, OnlinePage
+from classes import CreditsPage, PlayersPage, MapPage, RulePage, GamemodePage, OnlinePage, WaitingPage
 from game import Game
-from server import Server
-from queue import Queue
+
+import socket
+
+from game_constants.consts import PORT, HOST
 
 # program-wide logging formatter
 root_logger = logging.getLogger()
@@ -48,7 +50,7 @@ class Main:
         self.map_chosen = None
         self.fog = False
         
-        self.players = Queue()
+        self.host = ""
 
     def draw_options(self, options):
         self.screen.fill(self.black)
@@ -70,6 +72,56 @@ class Main:
 
             self.screen.blit(text, text_rect)
             pygame.draw.rect(self.screen, (255, 0, 0), option_hitbox, 2)
+    
+    def draw_input(self, input):
+        screen_width, screen_height = self.screen.get_size()
+        box_width = 200
+        box_height = 64
+        input_box = pygame.Rect((screen_width // 2) - (box_width // 2), (screen_height // 2) - (box_height // 2), box_width, box_height)
+        color_inactive = self.white
+        color_active = pygame.Color('red')
+        color = color_inactive
+        text = ''
+        active = False
+        
+        done:bool = False
+        while not done:
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    done = True
+                if event.type == pygame.MOUSEBUTTONDOWN:
+                    # If the user clicked on the input_box rect.
+                    if input_box.collidepoint(event.pos):
+                        # Toggle the active variable.
+                        active = not active
+                    else:
+                        active = False
+                    # Change the current color of the input box.
+                    color = color_active if active else color_inactive
+                if event.type == pygame.KEYDOWN:
+                    if (event.key == pygame.K_ESCAPE):
+                        return
+                    if active:
+                        if event.key == pygame.K_RETURN:
+                            return text
+                        elif event.key == pygame.K_BACKSPACE:
+                            text = text[:-1]
+                        else:
+                            text += event.unicode
+
+            self.screen.fill(self.black)
+            # Render the current text.
+            txt_surface = self.font.render(text, True, self.white)
+            # Resize the box if the text is too long.
+            width = max(200, txt_surface.get_width()+10)
+            input_box.w = width
+            # Blit the text.
+            self.screen.blit(txt_surface, (input_box.x+5, input_box.y+5))            
+            # Blit the input_box rect.
+            pygame.draw.rect(self.screen, color, input_box, 2)
+
+            pygame.display.flip()
+            self.clock.tick(30)
 
     def remove_all_hitboxes(self):
         self.hitboxes = []
@@ -89,7 +141,6 @@ class Main:
 
     def run(self):
         running = True
-        server:Server = Server()
         tutorial_page = RulePage(self.screen)
         credits_page = CreditsPage(self.screen)
         players_page = PlayersPage(self.screen)
@@ -98,9 +149,9 @@ class Main:
         online_page = OnlinePage(self.screen)
         choosing_players = False
         choosing_map = False
-        choosing_gamemode = False
         tutorial = False
         exiting_main_game = False
+        choosing_gamemode = False
         online = False
 
         while running:
@@ -161,15 +212,10 @@ class Main:
                                     self.current_state = "Map"
                                     choosing_map = True
                                     choosing_gamemode = False
-                                elif selected_text == "Host a game": # consider player selection as online hosted game state
+                                elif selected_text == "Online":
+                                    self.player_count = 1
                                     self.current_state = "Online"
                                     online = True
-                                    choosing_gamemode = False
-                                    # TODO: Implement hosting a game
-                                elif selected_text == "Join a game":
-                                    self.player_count = 1
-                                    self.current_state = "Map"
-                                    choosing_map = True
                                     choosing_gamemode = False
                                     # TODO: Implement a way to join a game (ip address, etc.)
                         
@@ -195,7 +241,7 @@ class Main:
                     elif self.current_state == "Gamemode": # back to lobby when in online/offline page
                         self.current_state = "Lobby"
                     elif self.current_state == "Online":
-                        server.stop()
+                        self.current_state = "Gamemode"
 
             self.screen.fill(self.black)
 
@@ -216,18 +262,20 @@ class Main:
                 game.run()
                 exiting_main_game = True
             elif self.current_state == "Online":
-                process = mp.Process(target=server.run, args=(self.players,))
-                process.start()
-                p_list = []
-                try:
-                    p_list = self.players.get(False)
-                    print(p_list)
-                except Exception as e:
-                    # Handle empty queue here
-                    online_page.draw(p_list)
+                self.host = self.draw_input(["Enter the IP address of the server"])
+                if not self.host:
+                    online = False
+                    self.current_state = "Gamemode"
+                # try to reach the server
+                WaitingPage(self.screen, self.host).draw()
+                pygame.display.flip()
+                sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                result = sock.connect_ex((self.host,PORT))
+                if result == 0:
+                    print("Server connection okay")
                 else:
-                    online_page.draw(p_list)
-                    self.players.task_done()
+                    print("Connection failed")
+                sock.close()
                 
                 
 

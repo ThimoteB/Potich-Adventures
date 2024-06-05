@@ -17,7 +17,7 @@ class OnlinePage:
         self.white = (255, 255, 255)
         self.black = (0, 0, 0)
 
-    def draw(self, online_players):
+    def draw(self):
         """This function is used to draw the online players."""
         self.screen.fill((0, 0, 0))
         
@@ -29,12 +29,6 @@ class OnlinePage:
         y = (self.screen.get_height() - total_text_height) // 2
         
         for line in self.text1:
-            text = self.font.render(line, True, (255, 255, 255))
-            text_rect = text.get_rect(center=(self.screen.get_width() // 2, y))
-            self.screen.blit(text, text_rect)
-            y += space
-
-        for line in online_players:
             text = self.font.render(line, True, (255, 255, 255))
             text_rect = text.get_rect(center=(self.screen.get_width() // 2, y))
             self.screen.blit(text, text_rect)

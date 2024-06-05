@@ -8,21 +8,16 @@ s.connect(("", 44440))
 
 print("Connecté")
 
-message = s.recv(1024)
-message = message.decode()
-print('recv:', message)
+# message = b"Hello, client"
+# s.send(message)
+# print("sent:", message)
 
-print("5")
-sleep(1)
-print("4")
-sleep(1)
-print("3")
-sleep(1)
-print("2")
-sleep(1)
-print("1")
-sleep(1)
-print("ended")
+while True:
+    data = s.recv(1024)
+    print(data)
+    sleep(1)
+
+sleep(10)
 
 s.close()
 

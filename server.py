@@ -1,4 +1,5 @@
 import socket
+import select
 import multiprocessing as mp
 from time import sleep
 
@@ -6,70 +7,63 @@ from classes  import OnlinePage
 
 from game_constants.consts import HOST, PORT
 
-class Server:
+class Server(object):
     def __init__(self):
-        self.s = socket.socket()
-        self.s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)  # solution for "[Error 89] Address already in use". Use before bind()
-        self.s.bind((HOST, PORT))
-        self.s.listen(1)
-        
-        self.clients = []
-            
-    def handle_client(self, conn, addr):
-        print("[thread] starting")
+        self.hostname = HOST
+        self.port = PORT
+    
+    def start(self):
+        server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        server_socket.bind((HOST, PORT))
+        server_socket.listen(5)
+        print("Listening on", server_socket.getsockname())
 
-        # do something
-        message = b"Hello, client at " + addr[0].encode() + b" on port " + str(addr[1]).encode()
-        conn.send(message)
-        
-        sleep(1)
-        print("5")
-        sleep(1)
-        print("4")
-        sleep(1)
-        print("3")
-        sleep(1)
-        print("2")
-        sleep(1)
-        print("1")
-        sleep(1)
-        print("ended")
-        
-        conn.close()
-
-        print("[thread] ending")
-    
-    def run(self, q):
-        try:
-            print("Waiting for client")
-            conn, addr = self.s.accept()
+        read_list = [server_socket]
+        new_con:bool = False
+        while True:
+            # server proces (do something)
+            print("Do something")
             
-            print("Client:", addr)
-                
-            t = mp.Process(target=self.handle_client, args=(conn, addr))
-            t.start()
             
-            self.clients.append(t)
-            q.put(t)
-                
-        except KeyboardInterrupt:
-            print("Stopped by Ctrl+C")
-        finally:
-            if self.s:
-                self.s.close()
-            for t in self.clients:
-                t.join()
+            # wait for client response/connexion
+            # select : wait until something is happening in a descriptor (server or client socket)
+            readable, writable, errored = select.select(read_list, [], [])
+            for s in readable:
+                if s is server_socket and not new_con: # manage server socket
+                    client_socket, address = server_socket.accept()
+                    read_list.append(client_socket)
+                    print("Connection from", address)
+                    
+                    # do something when a client join the server
+                    data = str.encode("Total players : " + str(len(read_list)-1))
+                    print(data)
+                    for cli in read_list[1:]:
+                        cli.send(data)
+                else: # manage client socket
+                    data = s.recv(1024)
+                    print("received:", data)
+                    if data:
+                        s.send(data)
+                        print("sent:", data)
+                    else:
+                        print("Closing connection")
+                        s.close()
+                        read_list.remove(s)
+                        data = str.encode("Total players : " + str(len(read_list)-1))
+                        print(data)
+                        for cli in read_list[1:]:
+                            cli.send(data)
     
-    def stop(self):
-        self.s.close()
-        for t in self.clients:
-            t.join()
-    
-    def get_players(self):
-        return self.clients
+        
 
 if __name__ == "__main__":
     server = Server()
-    # server.run()
-    players = server.get_players()
-    print(players)
+    try:
+        server.start()
+    except:
+        print("Error/Stop")
+    finally:
+        for process in mp.active_children():
+            process.terminate()
+            process.join()

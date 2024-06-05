@@ -15,5 +15,6 @@ from .rule_page import RulePage
 from .log_event import LogEvent
 from .gamemode_page import GamemodePage
 from .online_page import OnlinePage
+from .waiting_page import WaitingPage
 
 from .map_object import Pawn, Enemy
