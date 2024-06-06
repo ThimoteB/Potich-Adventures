@@ -254,6 +254,10 @@ class Main:
                         self.current_state = "Lobby"
                     elif self.current_state == "Online":
                         self.current_state = "Gamemode"
+                        
+                        
+                        
+                        
 
             self.screen.fill(self.black)
 
@@ -298,10 +302,12 @@ class Main:
                 try:
                     data = self.sock.recv(1024)
                     data = json.loads(data.decode())
-                    print(data["players"])
+                    print(data)
                     self.players = []
                     for player in data["players"]:
                         self.players.append((player[0], player[1]))
+                    if data["start"] == True:
+                        self.current_state = "Start"
                 except:
                     pass
                 self.sock.setblocking(True)
@@ -312,11 +318,8 @@ class Main:
         
             elif self.current_state == "Start":
                 print("Starting the game")
-                data = {
-                    "start": True
-                }
-                data = json.dumps(data)
-                self.sock.send(data.encode())
+                # TODO: start the game
+                self.sock.close()
 
             if exiting_main_game:
                 pygame.time.delay(1000)  # Wait 1 second before going back to the lobby
