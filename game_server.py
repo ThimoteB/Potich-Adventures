@@ -4,6 +4,7 @@ from queue import Queue
 from time import sleep
 import logging
 import pygame  # pylint: disable=import-error
+import socket
 
 from game_constants.consts import TICK_RATE, GRAPHICAL_TILE_SIZE, SOUND
 from classes import Tab, Board, Player, Card, Key, Camera, Pawn, Enemy, EndTurn
@@ -16,17 +17,25 @@ from classes.key import *  # pylint: disable=unused-wildcard-import,wildcard-imp
 log = logging.getLogger(__name__)
 
 
-class Game:
+class GameServer:
     """
     This class is used to create the main loop of the game.
     """
 
-    def __init__(self, player_count=2, mapchoose="map1.tmx", fog=False):
+    def __init__(self, read_list, player_count=2, mapchoose="map1.tmx", fog=False):
+        self.read_list:list[socket.socket] = read_list
+        """Sockets list -> first socket is the server socket, the others are client sockets"""
+        self.data:dict = {
+            "current_player": 0
+        }
+        
         pygame.init()  # pylint: disable=no-member
         self.player_count = player_count
-        self.screen = pygame.display.set_mode(
-            flags=pygame.FULLSCREEN  # pylint: disable=no-member
-        )  # pylint: disable=no-member
+        # self.screen = pygame.display.set_mode(
+        #     flags=pygame.FULLSCREEN  # pylint: disable=no-member
+        #     flags=pygame.FULLSCREEN  # pylint: disable=no-member
+        # )  # pylint: disable=no-member
+        # )  # pylint: disable=no-member
         # self.screen = pygame.display.set_mode((1600, 900))  # pylint: disable=no-member
         self.rect_fullscreen = pygame.Rect(
             0, 0, self.screen.get_width(), self.screen.get_height()
@@ -271,6 +280,8 @@ class Game:
         self.card_right_1 = card_right_1
         self.card_right_2 = card_right_2
         self.card_supreme = card_supreme
+        
+        
 
         match self.player_count:
             case 1:
@@ -351,21 +362,21 @@ class Game:
         """
         return all(slot.item is not None for slot in self.group_slots_key)
 
-    def handle_input_cam(self):
-        """This function is used to handle the input of the camera."""
-        dx, dy = 0, 0
-        keys = pygame.key.get_pressed()
+    # def handle_input_cam(self):
+    #     """This function is used to handle the input of the camera."""
+    #     dx, dy = 0, 0
+    #     keys = pygame.key.get_pressed()
 
-        if keys[pygame.K_LEFT]:  # pylint: disable=no-member
-            dx = -20
-        if keys[pygame.K_RIGHT]:  # pylint: disable=no-member
-            dx = 20
-        if keys[pygame.K_UP]:  # pylint: disable=no-member
-            dy = -20
-        if keys[pygame.K_DOWN]:  # pylint: disable=no-member
-            dy = 20
+    #     if keys[pygame.K_LEFT]:  # pylint: disable=no-member
+    #         dx = -20
+    #     if keys[pygame.K_RIGHT]:  # pylint: disable=no-member
+    #         dx = 20
+    #     if keys[pygame.K_UP]:  # pylint: disable=no-member
+    #         dy = -20
+    #     if keys[pygame.K_DOWN]:  # pylint: disable=no-member
+    #         dy = 20
 
-        self.camera.move(dx, dy)
+    #     self.camera.move(dx, dy)
 
     def move_check_key_and_card(
         self, pawn_selected: Pawn, new_y: int, new_x: int, pawn_y: int, pawn_x: int
@@ -417,28 +428,28 @@ class Game:
             )
         self.board.move_or_attack(pawn_selected, new_y, new_x, (pawn_y, pawn_x))
 
-    def clicked_cell(self, mouse_pos: tuple[int, int]):
-        """This function is used to get the clicked cell.
+    # def clicked_cell(self, mouse_pos: tuple[int, int]):
+    #     """This function is used to get the clicked cell.
 
-        Args:
-            mouse_pos (tuple[int, int]): mouse position
+    #     Args:
+    #         mouse_pos (tuple[int, int]): mouse position
 
-        Returns:
-            Cell: cell object
-        """
-        mouse_x, mouse_y = mouse_pos
-        map_x = (mouse_x + self.camera.x) // GRAPHICAL_TILE_SIZE
-        map_y = (mouse_y + self.camera.y) // GRAPHICAL_TILE_SIZE
-        if 0 <= map_x < self.board.width and 0 <= map_y < self.board.height:
-            clicked_cell = self.board.cells[map_y][map_x]
-            log.debug("Clicked cell: (%d, %d)", clicked_cell.y, clicked_cell.x)
-            if isinstance(clicked_cell.game_object, MapCard or Card):
-                log.debug("Card: %s", clicked_cell.game_object.card.name)
-            elif isinstance(clicked_cell.game_object, MapKey or Key):
-                log.debug("Key: %s", clicked_cell.game_object.key.name)
-            else:
-                log.debug("GAME OBJECT: %s", clicked_cell.game_object)
-        return clicked_cell
+    #     Returns:
+    #         Cell: cell object
+    #     """
+    #     mouse_x, mouse_y = mouse_pos
+    #     map_x = (mouse_x + self.camera.x) // GRAPHICAL_TILE_SIZE
+    #     map_y = (mouse_y + self.camera.y) // GRAPHICAL_TILE_SIZE
+    #     if 0 <= map_x < self.board.width and 0 <= map_y < self.board.height:
+    #         clicked_cell = self.board.cells[map_y][map_x]
+    #         log.debug("Clicked cell: (%d, %d)", clicked_cell.y, clicked_cell.x)
+    #         if isinstance(clicked_cell.game_object, MapCard or Card):
+    #             log.debug("Card: %s", clicked_cell.game_object.card.name)
+    #         elif isinstance(clicked_cell.game_object, MapKey or Key):
+    #             log.debug("Key: %s", clicked_cell.game_object.key.name)
+    #         else:
+    #             log.debug("GAME OBJECT: %s", clicked_cell.game_object)
+    #     return clicked_cell
 
     def select_pawn(self, cell: object):
         """This function is used to select a pawn.

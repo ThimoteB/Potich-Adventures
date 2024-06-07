@@ -3,16 +3,18 @@ import select
 import json
 import multiprocessing as mp
 from time import sleep
+from game_server import GameServer
 
 from game_constants.consts import HOST, PORT
 
 class Server(object):
-    def __init__(self):
+    def __init__(self) -> None:
         # server data
         self.hostname = HOST
         self.port = PORT
         self.read_list:list = []
-        self.max_players:int = 2
+        """Sockets list -> first socket is the server socket, the others are client sockets"""
+        self.max_players:int = 1
         
         # game data
         self.start_status:bool = False
@@ -42,17 +44,17 @@ class Server(object):
         for cli in self.read_list[1:]:
             self.pre_game_data["players"].append(cli.getpeername())
     
-    def update_start_status(self):
+    def update_start_status(self) -> None:
         if len(self.read_list[1:]) == self.max_players:
             self.pre_game_data["start"] = True
             self.start_status = True
             self.broadcast(self.pre_game_data)
             print(f'Starting the game with {len(self.read_list)-1} players')
     
-    def start(self):
+    def start(self) -> list[socket.socket]:
         """This method is used to start the game server and wait for client connection in order to start the game
         """
-        server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        server_socket:socket.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         server_socket.bind((HOST, PORT))
         server_socket.listen(5)
@@ -85,16 +87,14 @@ class Server(object):
                         self.update_players_list()
                         self.broadcast(self.pre_game_data)
             self.update_start_status()
+        return self.read_list
         
 
 if __name__ == "__main__":
-    server = Server()
-    # try:
-    server.start()
-        
-    # except:
-    #     print("Error/Stop")
-    # finally:
-    #     for process in mp.active_children():
-    #         process.terminate()
-    #         process.join()
+    while True:
+        try:
+            server = Server()
+            game = GameServer(server.start())
+        except Exception as e:
+            print(f'Error : {e}')
+            continue

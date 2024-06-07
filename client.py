@@ -30,7 +30,9 @@ class Client:
             "selected_card": None, # assigned with the card_selected variable in the main loop
             "selected_cell": None
         }
-        self.data_in:dict = {}
+        self.data_in:dict = {
+            "current_player": -1
+        }
         """Data received from the server"""
         
         pygame.init()  # pylint: disable=no-member
@@ -174,107 +176,108 @@ class Client:
         """
         self.list_pawns = []
         self.list_enemies = []
-        self.pawn1 = Pawn(
-            pygame.image.load("images/gamesprites/pawn/char_18.png").convert_alpha(),
-            "Gork",
-            100,
-            20,
-        )
-        self.pawn2 = Pawn(
-            pygame.image.load("images/gamesprites/pawn/char_32.png").convert_alpha(),
-            "Nano",
-            100,
-            20,
-        )
-        self.pawn3 = Pawn(
-            pygame.image.load("images/gamesprites/pawn/char_47.png").convert_alpha(),
-            "Sylphe",
-            100,
-            20,
-        )
-        self.pawn4 = Pawn(
-            pygame.image.load("images/gamesprites/pawn/char_44.png").convert_alpha(),
-            "Poticha",
-            100,
-            20,
-        )
+        # self.pawn1 = Pawn(
+        #     pygame.image.load("images/gamesprites/pawn/char_18.png").convert_alpha(),
+        #     "Gork",
+        #     100,
+        #     20,
+        # )
+        # self.pawn2 = Pawn(
+        #     pygame.image.load("images/gamesprites/pawn/char_32.png").convert_alpha(),
+        #     "Nano",
+        #     100,
+        #     20,
+        # )
+        # self.pawn3 = Pawn(
+        #     pygame.image.load("images/gamesprites/pawn/char_47.png").convert_alpha(),
+        #     "Sylphe",
+        #     100,
+        #     20,
+        # )
+        # self.pawn4 = Pawn(
+        #     pygame.image.load("images/gamesprites/pawn/char_44.png").convert_alpha(),
+        #     "Poticha",
+        #     100,
+        #     20,
+        # )
 
-        self.enemy1 = Enemy(
-            pygame.image.load("images/gamesprites/pawn/char_35.png").convert_alpha(),
-            "Squelette",
-            100,
-            20,
-            ia=True,
-        )
-        self.enemy2 = Enemy(
-            pygame.image.load("images/gamesprites/pawn/char_35.png").convert_alpha(),
-            "Squelette",
-            100,
-            20,
-            ia=True,
-        )
-        self.enemy3 = Enemy(
-            pygame.image.load("images/gamesprites/pawn/char_35.png").convert_alpha(),
-            "Squelette",
-            100,
-            20,
-            ia=True,
-        )
-        self.enemy4 = Enemy(
-            pygame.image.load("images/gamesprites/pawn/char_35.png").convert_alpha(),
-            "Squelette",
-            100,
-            20,
-            ia=True,
-        )
+        # self.enemy1 = Enemy(
+        #     pygame.image.load("images/gamesprites/pawn/char_35.png").convert_alpha(),
+        #     "Squelette",
+        #     100,
+        #     20,
+        #     ia=True,
+        # )
+        # self.enemy2 = Enemy(
+        #     pygame.image.load("images/gamesprites/pawn/char_35.png").convert_alpha(),
+        #     "Squelette",
+        #     100,
+        #     20,
+        #     ia=True,
+        # )
+        # self.enemy3 = Enemy(
+        #     pygame.image.load("images/gamesprites/pawn/char_35.png").convert_alpha(),
+        #     "Squelette",
+        #     100,
+        #     20,
+        #     ia=True,
+        # )
+        # self.enemy4 = Enemy(
+        #     pygame.image.load("images/gamesprites/pawn/char_35.png").convert_alpha(),
+        #     "Squelette",
+        #     100,
+        #     20,
+        #     ia=True,
+        # )
 
-        pawn_positions = {
-            "map1.tmx": [(60, 36), (63, 41), (59, 45), (56, 41)],
-            "map2.tmx": [(47, 50), (50, 53), (45, 57), (42, 53)],
-            "map3.tmx": [(49, 8), (47, 12), (42, 12), (40, 8)],
-            "map4.tmx": [(48, 75), (46, 81), (35, 83), (37, 78)],
-            "map5.tmx": [(42, 42), (46, 49), (42, 54), (37, 50)],
-            "map_courte.tmx": [(38, 46), (39, 45), (38, 44), (37, 45)],
-        }
+        # pawn_positions = {
+        #     "map1.tmx": [(60, 36), (63, 41), (59, 45), (56, 41)],
+        #     "map2.tmx": [(47, 50), (50, 53), (45, 57), (42, 53)],
+        #     "map3.tmx": [(49, 8), (47, 12), (42, 12), (40, 8)],
+        #     "map4.tmx": [(48, 75), (46, 81), (35, 83), (37, 78)],
+        #     "map5.tmx": [(42, 42), (46, 49), (42, 54), (37, 50)],
+        #     "map_courte.tmx": [(38, 46), (39, 45), (38, 44), (37, 45)],
+        # }
 
-        enemy_positions = {
-            "map1.tmx": [(81, 81), (44, 89), (15, 50), (73, 8)],
-            "map2.tmx": [(66, 75), (28, 76), (32, 25), (65, 32)],
-            "map3.tmx": [(92, 72), (63, 69), (30, 72), (8, 53)],
-            "map4.tmx": [(99, 86), (91, 76), (68, 21), (16, 32)],
-            "map5.tmx": [(93, 23), (78, 96), (14, 81), (24, 5)],
-            "map_courte.tmx": [(46, 50), (34, 35), (26, 46)],
-        }
+        # enemy_positions = {
+        #     "map1.tmx": [(81, 81), (44, 89), (15, 50), (73, 8)],
+        #     "map2.tmx": [(66, 75), (28, 76), (32, 25), (65, 32)],
+        #     "map3.tmx": [(92, 72), (63, 69), (30, 72), (8, 53)],
+        #     "map4.tmx": [(99, 86), (91, 76), (68, 21), (16, 32)],
+        #     "map5.tmx": [(93, 23), (78, 96), (14, 81), (24, 5)],
+        #     "map_courte.tmx": [(46, 50), (34, 35), (26, 46)],
+        # }
 
-        self.list_pawns.append(self.pawn1)
-        self.list_pawns.append(self.pawn2)
-        self.list_pawns.append(self.pawn3)
-        self.list_pawns.append(self.pawn4)
+        # TODO: append pawn and enemy received from server to the list
+        # self.list_pawns.append(self.pawn1)
+        # self.list_pawns.append(self.pawn2)
+        # self.list_pawns.append(self.pawn3)
+        # self.list_pawns.append(self.pawn4)
 
-        self.list_enemies.append(self.enemy1)
-        self.list_enemies.append(self.enemy2)
-        self.list_enemies.append(self.enemy3)
-        if not mapchoose == "map_courte.tmx":
-            self.list_enemies.append(self.enemy4)
+        # self.list_enemies.append(self.enemy1)
+        # self.list_enemies.append(self.enemy2)
+        # self.list_enemies.append(self.enemy3)
+        # if not mapchoose == "map_courte.tmx":
+        #     self.list_enemies.append(self.enemy4)
 
-        for i, pawn in enumerate(self.list_pawns):
-            y, x = pawn_positions[mapchoose][i]
-            self.board.cells[y][x].add_pawn(pawn)
+        # for i, pawn in enumerate(self.list_pawns):
+        #     y, x = pawn_positions[mapchoose][i]
+        #     self.board.cells[y][x].add_pawn(pawn)
 
-        for i, enemy in enumerate(self.list_enemies):
-            y, x = enemy_positions[mapchoose][i]
-            self.board.cells[y][x].add_pawn(enemy)
+        # for i, enemy in enumerate(self.list_enemies):
+        #     y, x = enemy_positions[mapchoose][i]
+        #     self.board.cells[y][x].add_pawn(enemy)
 
         # TODO: the client does not need to know the queue
         # self.queue = Queue()
-        for player in range(self.player_count):
-            self.queue.put(Player(player + 1))
-        self.queue.put(self.enemy1)
-        self.queue.put(self.enemy2)
-        self.queue.put(self.enemy3)
-        if not mapchoose == "map_courte.tmx":
-            self.queue.put(self.enemy4)
-        self.queue.put(EndTurn())
+        # for player in range(self.player_count):
+        #     self.queue.put(Player(player + 1))
+        # self.queue.put(self.enemy1)
+        # self.queue.put(self.enemy2)
+        # self.queue.put(self.enemy3)
+        # if not mapchoose == "map_courte.tmx":
+        #     self.queue.put(self.enemy4)
+        # self.queue.put(EndTurn())
 
         self.init_cards_slots()
         self.init_key_slots()
@@ -352,20 +355,20 @@ class Client:
     #         for card in queue.queue[0].cards:
     #             self.group_slots_card[queue.queue[0].cards.index(card)].add_item(card)
 
-    def swap_player(self, queue: Queue):
-        """This function is used to swap the player.
+    # def swap_player(self, queue: Queue):
+    #     """This function is used to swap the player.
 
-        Args:
-            queue (Queue): queue object
-        """
-        # TODO: maybe send a signal to all clients ?
-        queue.put(queue.get())
-        if isinstance(queue.queue[0], Player):
-            self.tab.game_info.current_player = "Joueur " + str(queue.queue[0].number)
-        else:
-            self.tab.game_info.current_player = "Enemy"
-        self.unhilight()
-        self.tab.unselect_all_cards()
+    #     Args:
+    #         queue (Queue): queue object
+    #     """
+    #     # TODO: maybe send a signal to all clients ?
+    #     queue.put(queue.get())
+    #     if isinstance(queue.queue[0], Player):
+    #         self.tab.game_info.current_player = "Joueur " + str(queue.queue[0].number)
+    #     else:
+    #         self.tab.game_info.current_player = "Enemy"
+    #     self.unhilight()
+    #     self.tab.unselect_all_cards()
 
     def add_key_slot(self, key: Key):
         """This function is used to add a key slot.
@@ -727,7 +730,7 @@ class Client:
             pygame.display.flip()
             
             # TODO: render the player swap
-            self.tab.game_info.current_player = "Joueur " + (self.data_in["current_player"]+1)
+            self.tab.game_info.current_player = f'Joueur {(self.data_in["current_player"]+1)}'
 
 
 if __name__ == "__main__":
