@@ -6,6 +6,7 @@ from rich.logging import RichHandler
 
 from classes import CreditsPage, PlayersPage, MapPage, RulePage, GamemodePage, WaitingPage, LobbyPage
 from game import Game
+from client import Client
 
 import socket, json
 
@@ -28,10 +29,8 @@ class Main:
     def __init__(self) -> None:
         pygame.init()  # pylint: disable=no-member
         pygame.font.init()
-        self.screen = pygame.display.set_mode(
-            flags=pygame.FULLSCREEN  # pylint: disable=no-member
-        )  # pylint: disable=no-member
-        # self.screen = pygame.display.set_mode((1600, 1000))
+        # self.screen = pygame.display.set_mode(flags=pygame.FULLSCREEN)  # pylint: disable=no-member
+        self.screen = pygame.display.set_mode((1600, 1000))
         self.clock = pygame.time.Clock()
 
         self.white = (255, 255, 255)
@@ -51,7 +50,7 @@ class Main:
         self.fog = False
         
         self.host = ""
-        self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.sock:socket.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.players = []
 
     def draw_options(self, options, do_not_clear=False, manual_offset=0):
@@ -319,7 +318,9 @@ class Main:
             elif self.current_state == "Start":
                 print("Starting the game")
                 # TODO: start the game
-                self.sock.close()
+                game = Client(self.sock, len(self.players))
+                game.run()
+                exiting_main_game = True
 
             if exiting_main_game:
                 pygame.time.delay(1000)  # Wait 1 second before going back to the lobby
