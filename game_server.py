@@ -542,7 +542,16 @@ class GameServer:
             data = json.dumps(data)
             log.debug("Sending data to player %d : %s", self.read_list.index(cli), data)
             cli.setblocking(blocking)
-            cli.send(data.encode())
+            try:
+                cli.send(data.encode())
+            except BrokenPipeError:
+                log.error("Error : broken client pipe from %s", self.read_list.index(cli))
+                for other_cli in self.read_list[1:]:
+                    if other_cli is not cli:
+                        other_cli.close()
+                        self.read_list.remove(other_cli)
+                self.read_list.remove(cli)
+                self.read_list[0].close()
             cli.setblocking(False)
         return True
     
