@@ -22,7 +22,7 @@ class GameServer:
     This class is used to create the main loop of the game.
     """
 
-    def __init__(self, read_list, player_count=2, mapchoose="map2.tmx", fog=False):
+    def __init__(self, read_list, player_count=1, mapchoose="map2.tmx", fog=False):
         self.read_list:list[socket.socket] = read_list
         self.read_list[0].setblocking(True)
         """Sockets list -> first socket is the server socket, the others are client sockets"""
@@ -527,6 +527,9 @@ class GameServer:
             data = {}
             data.update(self.data)
             data.update(self.players[self.read_list.index(cli)-1])
+            data.update({
+                "player_number": self.read_list.index(cli)-1,
+            })
             data = json.dumps(data)
             log.debug("Sending data to player %d : %s", self.read_list.index(cli)-1, data)
             cli.setblocking(blocking)
