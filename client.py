@@ -22,7 +22,7 @@ class Client:
     This class is used to create the main loop of the game.
     """
 
-    def __init__(self, sock:socket.socket, player_count=2, mapchoose="map1.tmx", fog=False):
+    def __init__(self, sock:socket.socket, fog=False):
         self.sock:socket.socket = sock
         self.sock.setblocking(False)
         self.data_out:dict = {
@@ -31,25 +31,32 @@ class Client:
             "selected_cell": None
         }
         self.data_in:dict = {
-            "current_player": -1
+            # "player_count": 0,
+            # "current_player": 0,
+            # "map": None
         }
         """Data received from the server"""
         
         pygame.init()  # pylint: disable=no-member
-        self.player_count = player_count
+        
+        self.recv_data(blocking=True)
+        
+        self.player_count = self.data_in["player_count"]
+        self.map_chosen = self.data_in["map"]
+        log.debug("Map chosen: %s", self.map_chosen)
+        
         # self.screen = pygame.display.set_mode(flags=pygame.FULLSCREEN)  # pylint: disable=no-member
         self.screen = pygame.display.set_mode((1600, 900))  # pylint: disable=no-member
         self.rect_fullscreen = pygame.Rect(
             0, 0, self.screen.get_width(), self.screen.get_height()
         )
         self.clock = pygame.time.Clock()
-        self.camera = self.init_camera(mapchoose)
+        self.camera = self.init_camera(self.data_in["map"])
         self.camera.set_bounds(self.screen.get_width(), self.screen.get_height())
-        self.map_chosen = mapchoose
         self.board = Board.from_tmx("maps/" + self.map_chosen, self.camera, False)
         self.board.resize_tiles(GRAPHICAL_TILE_SIZE, GRAPHICAL_TILE_SIZE)
         self.tab = Tab(self.screen, 50, self.screen.get_height(), 50)
-        self.init_game_elements(mapchoose)
+        self.init_game_elements(self.data_in["map"])
         self.fog = fog
         self.load_fog_image()
         self.init_fog_cells()
@@ -69,9 +76,23 @@ class Client:
             return False
     
     def reset_data(self):
-        self.data_out["skip"] = False
-        self.data_out["selected_card"] = None
-        self.data_out["selected_cell"] = False
+        pass
+    
+    def recv_data(self, blocking=False) -> bool:
+        """This method receive data from the server and store it in the self.data_in attribute
+
+        Returns:
+            bool: False if the receive fail
+        """
+        self.sock.setblocking(blocking)
+        try:
+            data:bytes = self.sock.recv(1024)
+            self.data_in = json.loads(data.decode())
+            log.debug("Received: %s", self.data_in)
+            self.sock.setblocking(False)
+            return True
+        except BlockingIOError:
+            return False
         
 
     def end_game(self):
@@ -174,99 +195,100 @@ class Client:
         Args:
             mapchoose (str): map chosen by the player
         """
+        
         self.list_pawns = []
         self.list_enemies = []
-        # self.pawn1 = Pawn(
-        #     pygame.image.load("images/gamesprites/pawn/char_18.png").convert_alpha(),
-        #     "Gork",
-        #     100,
-        #     20,
-        # )
-        # self.pawn2 = Pawn(
-        #     pygame.image.load("images/gamesprites/pawn/char_32.png").convert_alpha(),
-        #     "Nano",
-        #     100,
-        #     20,
-        # )
-        # self.pawn3 = Pawn(
-        #     pygame.image.load("images/gamesprites/pawn/char_47.png").convert_alpha(),
-        #     "Sylphe",
-        #     100,
-        #     20,
-        # )
-        # self.pawn4 = Pawn(
-        #     pygame.image.load("images/gamesprites/pawn/char_44.png").convert_alpha(),
-        #     "Poticha",
-        #     100,
-        #     20,
-        # )
+        self.pawn1 = Pawn(
+            pygame.image.load("images/gamesprites/pawn/char_18.png").convert_alpha(),
+            "Gork",
+            100,
+            20,
+        )
+        self.pawn2 = Pawn(
+            pygame.image.load("images/gamesprites/pawn/char_32.png").convert_alpha(),
+            "Nano",
+            100,
+            20,
+        )
+        self.pawn3 = Pawn(
+            pygame.image.load("images/gamesprites/pawn/char_47.png").convert_alpha(),
+            "Sylphe",
+            100,
+            20,
+        )
+        self.pawn4 = Pawn(
+            pygame.image.load("images/gamesprites/pawn/char_44.png").convert_alpha(),
+            "Poticha",
+            100,
+            20,
+        )
 
-        # self.enemy1 = Enemy(
-        #     pygame.image.load("images/gamesprites/pawn/char_35.png").convert_alpha(),
-        #     "Squelette",
-        #     100,
-        #     20,
-        #     ia=True,
-        # )
-        # self.enemy2 = Enemy(
-        #     pygame.image.load("images/gamesprites/pawn/char_35.png").convert_alpha(),
-        #     "Squelette",
-        #     100,
-        #     20,
-        #     ia=True,
-        # )
-        # self.enemy3 = Enemy(
-        #     pygame.image.load("images/gamesprites/pawn/char_35.png").convert_alpha(),
-        #     "Squelette",
-        #     100,
-        #     20,
-        #     ia=True,
-        # )
-        # self.enemy4 = Enemy(
-        #     pygame.image.load("images/gamesprites/pawn/char_35.png").convert_alpha(),
-        #     "Squelette",
-        #     100,
-        #     20,
-        #     ia=True,
-        # )
+        self.enemy1 = Enemy(
+            pygame.image.load("images/gamesprites/pawn/char_35.png").convert_alpha(),
+            "Squelette",
+            100,
+            20,
+            ia=True,
+        )
+        self.enemy2 = Enemy(
+            pygame.image.load("images/gamesprites/pawn/char_35.png").convert_alpha(),
+            "Squelette",
+            100,
+            20,
+            ia=True,
+        )
+        self.enemy3 = Enemy(
+            pygame.image.load("images/gamesprites/pawn/char_35.png").convert_alpha(),
+            "Squelette",
+            100,
+            20,
+            ia=True,
+        )
+        self.enemy4 = Enemy(
+            pygame.image.load("images/gamesprites/pawn/char_35.png").convert_alpha(),
+            "Squelette",
+            100,
+            20,
+            ia=True,
+        )
 
-        # pawn_positions = {
-        #     "map1.tmx": [(60, 36), (63, 41), (59, 45), (56, 41)],
-        #     "map2.tmx": [(47, 50), (50, 53), (45, 57), (42, 53)],
-        #     "map3.tmx": [(49, 8), (47, 12), (42, 12), (40, 8)],
-        #     "map4.tmx": [(48, 75), (46, 81), (35, 83), (37, 78)],
-        #     "map5.tmx": [(42, 42), (46, 49), (42, 54), (37, 50)],
-        #     "map_courte.tmx": [(38, 46), (39, 45), (38, 44), (37, 45)],
-        # }
+        pawn_positions = {
+            "map1.tmx": [(60, 36), (63, 41), (59, 45), (56, 41)],
+            "map2.tmx": [(47, 50), (50, 53), (45, 57), (42, 53)],
+            "map3.tmx": [(49, 8), (47, 12), (42, 12), (40, 8)],
+            "map4.tmx": [(48, 75), (46, 81), (35, 83), (37, 78)],
+            "map5.tmx": [(42, 42), (46, 49), (42, 54), (37, 50)],
+            "map_courte.tmx": [(38, 46), (39, 45), (38, 44), (37, 45)],
+        }
 
-        # enemy_positions = {
-        #     "map1.tmx": [(81, 81), (44, 89), (15, 50), (73, 8)],
-        #     "map2.tmx": [(66, 75), (28, 76), (32, 25), (65, 32)],
-        #     "map3.tmx": [(92, 72), (63, 69), (30, 72), (8, 53)],
-        #     "map4.tmx": [(99, 86), (91, 76), (68, 21), (16, 32)],
-        #     "map5.tmx": [(93, 23), (78, 96), (14, 81), (24, 5)],
-        #     "map_courte.tmx": [(46, 50), (34, 35), (26, 46)],
-        # }
+        enemy_positions = {
+            "map1.tmx": [(81, 81), (44, 89), (15, 50), (73, 8)],
+            "map2.tmx": [(66, 75), (28, 76), (32, 25), (65, 32)],
+            "map3.tmx": [(92, 72), (63, 69), (30, 72), (8, 53)],
+            "map4.tmx": [(99, 86), (91, 76), (68, 21), (16, 32)],
+            "map5.tmx": [(93, 23), (78, 96), (14, 81), (24, 5)],
+            "map_courte.tmx": [(46, 50), (34, 35), (26, 46)],
+        }
 
         # TODO: append pawn and enemy received from server to the list
-        # self.list_pawns.append(self.pawn1)
-        # self.list_pawns.append(self.pawn2)
-        # self.list_pawns.append(self.pawn3)
-        # self.list_pawns.append(self.pawn4)
+        self.list_pawns.append(self.pawn1)
+        self.list_pawns.append(self.pawn2)
+        self.list_pawns.append(self.pawn3)
+        self.list_pawns.append(self.pawn4)
 
-        # self.list_enemies.append(self.enemy1)
-        # self.list_enemies.append(self.enemy2)
-        # self.list_enemies.append(self.enemy3)
-        # if not mapchoose == "map_courte.tmx":
-        #     self.list_enemies.append(self.enemy4)
+        self.list_enemies.append(self.enemy1)
+        self.list_enemies.append(self.enemy2)
+        self.list_enemies.append(self.enemy3)
+        if not mapchoose == "map_courte.tmx":
+            self.list_enemies.append(self.enemy4)
 
-        # for i, pawn in enumerate(self.list_pawns):
-        #     y, x = pawn_positions[mapchoose][i]
-        #     self.board.cells[y][x].add_pawn(pawn)
+        for i, pawn in enumerate(self.list_pawns):
+            y, x = pawn_positions[mapchoose][i]
+            self.board.cells[y][x].add_pawn(pawn)
 
-        # for i, enemy in enumerate(self.list_enemies):
-        #     y, x = enemy_positions[mapchoose][i]
-        #     self.board.cells[y][x].add_pawn(enemy)
+        for i, enemy in enumerate(self.list_enemies):
+            y, x = enemy_positions[mapchoose][i]
+            self.board.cells[y][x].add_pawn(enemy)
 
         # TODO: the client does not need to know the queue
         # self.queue = Queue()
@@ -293,20 +315,37 @@ class Client:
             self.tab.bottom_left_slot,
             self.tab.bottom_right_slot,
         ]
-        self.card_croix = card_croix
-        self.card_lightning = card_lightning
-        self.card_horloge = card_horloge
-        self.card_fontaine = card_fontaine
-        self.card_plume = card_plume
-        self.card_up_1 = card_up_1
-        self.card_up_2 = card_up_2
-        self.card_down_1 = card_down_1
-        self.card_down_2 = card_down_2
-        self.card_left_1 = card_left_1
-        self.card_left_2 = card_left_2
-        self.card_right_1 = card_right_1
-        self.card_right_2 = card_right_2
-        self.card_supreme = card_supreme
+        self.card_croix:Card = card_croix
+        self.card_lightning:Card = card_lightning
+        self.card_horloge:Card = card_horloge
+        self.card_fontaine:Card = card_fontaine
+        self.card_plume:Card = card_plume
+        self.card_up_1:Card = card_up_1
+        self.card_up_2:Card = card_up_2
+        self.card_down_1:Card = card_down_1
+        self.card_down_2:Card = card_down_2
+        self.card_left_1:Card = card_left_1
+        self.card_left_2:Card = card_left_2
+        self.card_right_1:Card = card_right_1
+        self.card_right_2:Card = card_right_2
+        self.card_supreme:Card = card_supreme
+        
+        card_list:list[Card] = [
+            card_croix,
+            card_lightning,
+            card_horloge,
+            card_fontaine,
+            card_plume,
+            card_up_1,
+            card_up_2,
+            card_down_1,
+            card_down_2,
+            card_left_1,
+            card_left_2,
+            card_right_1,
+            card_right_2,
+            card_supreme
+        ]
 
         # match self.player_count:
         #     case 1:
@@ -332,6 +371,12 @@ class Client:
         #         self.queue.queue[1].add_card(self.card_down_1)
         #         self.queue.queue[2].add_card(self.card_left_1)
         #         self.queue.queue[3].add_card(self.card_right_1)
+        
+        for i, card in enumerate(self.data_in["cards"]):
+            for c in card_list:
+                if c.get_name == card:
+                    self.group_slots_card[i].add_item(c)
+                    break
 
     def init_key_slots(self):
         """This function is used to initialize the key slots."""
@@ -654,7 +699,7 @@ class Client:
                     # Check if the click is on the black zone ( for not clicking on the cell behind)
                     # Detect if a card is selected or unselected
                     elif self.tab.black_zone.on_click(pygame.mouse.get_pos()):
-                        print(pygame.mouse.get_pos())
+                        log.debug(pygame.mouse.get_pos())
                         previous_card_selected = card_selected
                         card_selected = self.tab.handle_click(pygame.mouse.get_pos())
                         # Check if the same card is re-selected
@@ -675,8 +720,10 @@ class Client:
                     # Case where the click is on the board
                     else:
                         clicked_cell = self.clicked_cell(pygame.mouse.get_pos())
-                        self.data_out["selected_cell"] = clicked_cell
-                        self.send_data()
+                        log.debug("Clicked cell: %s", clicked_cell)
+                        # self.data_out["selected_cell"] = clicked_cell
+                        # self.send_data()
+                        
                         # clicked_cell_y, clicked_cell_x = clicked_cell.y, clicked_cell.x
 
                         # TODO: let the sever handle the click on the cell
@@ -734,4 +781,18 @@ class Client:
 
 
 if __name__ == "__main__":
-    pass
+    from rich.logging import RichHandler
+    root_logger = logging.getLogger()
+    handler = RichHandler()
+    root_logger.addHandler(handler)
+    root_logger.setLevel(logging.DEBUG)
+    root_logger.propagate = False
+    log = logging.getLogger(__name__)
+    
+    sock:socket.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    sock.connect_ex(("127.0.0.1",44440))
+    log.debug(sock.recv(1024).decode())
+
+    game = Client(sock)
+    game.run()
+    pygame.quit()

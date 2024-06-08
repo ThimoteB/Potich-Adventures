@@ -4,8 +4,22 @@ import json
 import multiprocessing as mp
 from time import sleep
 from game_server import GameServer
-
 from game_constants.consts import HOST, PORT
+import logging
+from rich.logging import RichHandler
+
+# program-wide logging formatter
+root_logger = logging.getLogger()
+
+handler = RichHandler()
+root_logger.addHandler(handler)
+
+root_logger.setLevel(logging.DEBUG)
+
+root_logger.propagate = False
+
+log = logging.getLogger(__name__)
+
 
 class Server(object):
     def __init__(self) -> None:
@@ -14,7 +28,7 @@ class Server(object):
         self.port = PORT
         self.read_list:list = []
         """Sockets list -> first socket is the server socket, the others are client sockets"""
-        self.max_players:int = 1
+        self.max_players:int = 2
         
         # game data
         self.start_status:bool = False
@@ -29,7 +43,7 @@ class Server(object):
         Args:
             data (dict): a dict of data to be sent
         """
-        print(f'Broadcasting : {input}')
+        log.debug("Broadcasting : %s", input)
         data = json.dumps(input)
         for cli in self.read_list[1:]:
             cli.send(data.encode())
@@ -49,7 +63,7 @@ class Server(object):
             self.pre_game_data["start"] = True
             self.start_status = True
             self.broadcast(self.pre_game_data)
-            print(f'Starting the game with {len(self.read_list)-1} players')
+            log.info("Starting the game with %s players", len(self.read_list)-1)
     
     def start(self) -> list[socket.socket]:
         """This method is used to start the game server and wait for client connection in order to start the game
@@ -58,7 +72,7 @@ class Server(object):
         server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         server_socket.bind((HOST, PORT))
         server_socket.listen(5)
-        print("Listening on", server_socket.getsockname())
+        log.info("Listening on %s", server_socket.getsockname())
 
         self.read_list = [server_socket]
         
@@ -71,7 +85,7 @@ class Server(object):
                 if s is server_socket: # manage server socket
                     client_socket, address = server_socket.accept()
                     self.read_list.append(client_socket)
-                    print("Connection from", address)
+                    log.info("Connection from %s", address)
                     self.update_players_list()
                     if len(self.read_list[1:]) != self.max_players:
                         self.broadcast(self.pre_game_data)
@@ -79,9 +93,9 @@ class Server(object):
                     data = s.recv(1024)
                     if data: # received data
                         data = data.decode()
-                        print(f'Received from {s.getpeername()} : {data}')
+                        log.debug("Received from %s : %s", s.getpeername(), data)
                     else: # client closed connection
-                        print("Disconnected :", s.getpeername())
+                        log.warning("Disconnected : %s", s.getpeername())
                         s.close()
                         self.read_list.remove(s)
                         self.update_players_list()
@@ -92,9 +106,14 @@ class Server(object):
 
 if __name__ == "__main__":
     while True:
-        try:
-            server = Server()
-            game = GameServer(server.start())
-        except Exception as e:
-            print(f'Error : {e}')
-            continue
+        # try:
+        #     server = Server()
+        #     game = GameServer(server.start())
+        #     game.run()
+        # except Exception as e:
+        #     log.error(f'Error : {e}')
+        #     continue
+        
+        server = Server()
+        game = GameServer(server.start())
+        game.run()

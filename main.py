@@ -202,7 +202,6 @@ class Main:
                                 map_page.handle_fog()
                         elif tutorial:
                             tutorial_page.on_click(mouse_pos)
-                            print("TUTO CLICKED")
 
                         elif choosing_players:
                             if self.on_click_player(mouse_pos):
@@ -287,11 +286,11 @@ class Main:
                 
                 result = self.sock.connect_ex((self.host,PORT))
                 if result == 0:
-                    print("Server connection okay")
+                    log.debug("Server connection okay")
                     self.current_state = "OnlineLobby"
                     LobbyPage(self.screen).draw()
                 else:
-                    print("Connection failed")
+                    log.warning("Connection failed")
                     self.sock.close()
                     
             # Connection etablished : waiting for other players
@@ -301,7 +300,7 @@ class Main:
                 try:
                     data = self.sock.recv(1024)
                     data = json.loads(data.decode())
-                    print(data)
+                    log.debug(data)
                     self.players = []
                     for player in data["players"]:
                         self.players.append((player[0], player[1]))
@@ -316,9 +315,9 @@ class Main:
                 
         
             elif self.current_state == "Start":
-                print("Starting the game")
+                log.info("Starting the game")
                 # TODO: start the game
-                game = Client(self.sock, len(self.players))
+                game = Client(self.sock)
                 game.run()
                 exiting_main_game = True
 

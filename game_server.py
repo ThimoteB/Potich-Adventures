@@ -1,5 +1,6 @@
 """ File containing the main loop of the game """
 
+import json
 from queue import Queue
 from time import sleep
 import logging
@@ -7,12 +8,11 @@ import pygame  # pylint: disable=import-error
 import socket
 
 from game_constants.consts import TICK_RATE, GRAPHICAL_TILE_SIZE, SOUND
-from classes import Tab, Board, Player, Card, Key, Camera, Pawn, Enemy, EndTurn
-from classes.map_object import MapCard, MapKey
+from server_classes import Tab, Board, Player, Card, Key, Camera, Pawn, Enemy, EndTurn
+from server_classes.map_object import MapCard, MapKey
 from moves import *  # Import all the moves # pylint: disable=unused-wildcard-import,wildcard-import
-from classes.card import *  # pylint: disable=unused-wildcard-import,wildcard-import
-from classes.key import *  # pylint: disable=unused-wildcard-import,wildcard-import
-
+from server_classes.card import *  # pylint: disable=unused-wildcard-import,wildcard-import
+from server_classes.key import *  # pylint: disable=unused-wildcard-import,wildcard-import
 
 log = logging.getLogger(__name__)
 
@@ -22,14 +22,21 @@ class GameServer:
     This class is used to create the main loop of the game.
     """
 
-    def __init__(self, read_list, player_count=2, mapchoose="map1.tmx", fog=False):
+    def __init__(self, read_list, player_count=2, mapchoose="map2.tmx", fog=False):
         self.read_list:list[socket.socket] = read_list
+        self.read_list[0].setblocking(True)
         """Sockets list -> first socket is the server socket, the others are client sockets"""
         self.data:dict = {
-            "current_player": 0
+            "player_count": player_count,
+            "current_player": 0,
+            "map": None
         }
+        self.players:list = [{},{},{},{}]
         
-        pygame.init()  # pylint: disable=no-member
+        """Players[0] = read_list[1], etc...
+        """
+        
+        # pygame.init()  # pylint: disable=no-member
         self.player_count = player_count
         # self.screen = pygame.display.set_mode(
         #     flags=pygame.FULLSCREEN  # pylint: disable=no-member
@@ -37,16 +44,16 @@ class GameServer:
         # )  # pylint: disable=no-member
         # )  # pylint: disable=no-member
         # self.screen = pygame.display.set_mode((1600, 900))  # pylint: disable=no-member
-        self.rect_fullscreen = pygame.Rect(
-            0, 0, self.screen.get_width(), self.screen.get_height()
-        )
+        # self.rect_fullscreen = pygame.Rect(
+        #     0, 0, self.screen.get_width(), self.screen.get_height()
+        # )
         self.clock = pygame.time.Clock()
         self.camera = self.init_camera(mapchoose)
-        self.camera.set_bounds(self.screen.get_width(), self.screen.get_height())
+        # self.camera.set_bounds(self.screen.get_width(), self.screen.get_height())
         self.map_chosen = mapchoose
-        self.board = Board.from_tmx("maps/" + self.map_chosen, self.camera, False)
-        self.board.resize_tiles(GRAPHICAL_TILE_SIZE, GRAPHICAL_TILE_SIZE)
-        self.tab = Tab(self.screen, 50, self.screen.get_height(), 50)
+        self.board = Board.from_tmx("maps/" + self.map_chosen, False)
+        # self.board.resize_tiles(GRAPHICAL_TILE_SIZE, GRAPHICAL_TILE_SIZE)
+        self.tab = Tab()
         self.init_game_elements(mapchoose)
         self.fog = fog
         self.load_fog_image()
@@ -153,60 +160,60 @@ class GameServer:
         self.list_pawns = []
         self.list_enemies = []
         self.pawn1 = Pawn(
-            pygame.image.load("images/gamesprites/pawn/char_18.png").convert_alpha(),
+            # pygame.image.load("images/gamesprites/pawn/char_18.png").convert_alpha(),
             "Gork",
             100,
             20,
         )
         self.pawn2 = Pawn(
-            pygame.image.load("images/gamesprites/pawn/char_32.png").convert_alpha(),
+            # pygame.image.load("images/gamesprites/pawn/char_32.png").convert_alpha(),
             "Nano",
             100,
             20,
         )
         self.pawn3 = Pawn(
-            pygame.image.load("images/gamesprites/pawn/char_47.png").convert_alpha(),
+            # pygame.image.load("images/gamesprites/pawn/char_47.png").convert_alpha(),
             "Sylphe",
             100,
             20,
         )
         self.pawn4 = Pawn(
-            pygame.image.load("images/gamesprites/pawn/char_44.png").convert_alpha(),
+            # pygame.image.load("images/gamesprites/pawn/char_44.png").convert_alpha(),
             "Poticha",
             100,
             20,
         )
 
         self.enemy1 = Enemy(
-            pygame.image.load("images/gamesprites/pawn/char_35.png").convert_alpha(),
+            # pygame.image.load("images/gamesprites/pawn/char_35.png").convert_alpha(),
             "Squelette",
             100,
             20,
             ia=True,
         )
         self.enemy2 = Enemy(
-            pygame.image.load("images/gamesprites/pawn/char_35.png").convert_alpha(),
+            # pygame.image.load("images/gamesprites/pawn/char_35.png").convert_alpha(),
             "Squelette",
             100,
             20,
             ia=True,
         )
         self.enemy3 = Enemy(
-            pygame.image.load("images/gamesprites/pawn/char_35.png").convert_alpha(),
+            # pygame.image.load("images/gamesprites/pawn/char_35.png").convert_alpha(),
             "Squelette",
             100,
             20,
             ia=True,
         )
         self.enemy4 = Enemy(
-            pygame.image.load("images/gamesprites/pawn/char_35.png").convert_alpha(),
+            # pygame.image.load("images/gamesprites/pawn/char_35.png").convert_alpha(),
             "Squelette",
             100,
             20,
             ia=True,
         )
 
-        pawn_positions = {
+        self.pawn_positions = {
             "map1.tmx": [(60, 36), (63, 41), (59, 45), (56, 41)],
             "map2.tmx": [(47, 50), (50, 53), (45, 57), (42, 53)],
             "map3.tmx": [(49, 8), (47, 12), (42, 12), (40, 8)],
@@ -215,7 +222,7 @@ class GameServer:
             "map_courte.tmx": [(38, 46), (39, 45), (38, 44), (37, 45)],
         }
 
-        enemy_positions = {
+        self.enemy_positions = {
             "map1.tmx": [(81, 81), (44, 89), (15, 50), (73, 8)],
             "map2.tmx": [(66, 75), (28, 76), (32, 25), (65, 32)],
             "map3.tmx": [(92, 72), (63, 69), (30, 72), (8, 53)],
@@ -236,11 +243,11 @@ class GameServer:
             self.list_enemies.append(self.enemy4)
 
         for i, pawn in enumerate(self.list_pawns):
-            y, x = pawn_positions[mapchoose][i]
+            y, x = self.pawn_positions[mapchoose][i]
             self.board.cells[y][x].add_pawn(pawn)
 
         for i, enemy in enumerate(self.list_enemies):
-            y, x = enemy_positions[mapchoose][i]
+            y, x = self.enemy_positions[mapchoose][i]
             self.board.cells[y][x].add_pawn(enemy)
 
         self.queue = Queue()
@@ -266,21 +273,20 @@ class GameServer:
             self.tab.bottom_left_slot,
             self.tab.bottom_right_slot,
         ]
-        self.card_croix = card_croix
-        self.card_lightning = card_lightning
-        self.card_horloge = card_horloge
-        self.card_fontaine = card_fontaine
-        self.card_plume = card_plume
-        self.card_up_1 = card_up_1
-        self.card_up_2 = card_up_2
-        self.card_down_1 = card_down_1
-        self.card_down_2 = card_down_2
-        self.card_left_1 = card_left_1
-        self.card_left_2 = card_left_2
-        self.card_right_1 = card_right_1
-        self.card_right_2 = card_right_2
-        self.card_supreme = card_supreme
-        
+        self.card_croix:Card = card_croix
+        self.card_lightning:Card = card_lightning
+        self.card_horloge:Card = card_horloge
+        self.card_fontaine:Card = card_fontaine
+        self.card_plume:Card = card_plume
+        self.card_up_1:Card = card_up_1
+        self.card_up_2:Card = card_up_2
+        self.card_down_1:Card = card_down_1
+        self.card_down_2:Card = card_down_2
+        self.card_left_1:Card = card_left_1
+        self.card_left_2:Card = card_left_2
+        self.card_right_1:Card = card_right_1
+        self.card_right_2:Card = card_right_2
+        self.card_supreme:Card = card_supreme
         
 
         match self.player_count:
@@ -289,16 +295,22 @@ class GameServer:
                 self.queue.queue[0].add_card(self.card_down_1)
                 self.queue.queue[0].add_card(self.card_left_1)
                 self.queue.queue[0].add_card(self.card_right_1)
+                self.players[0]["cards"] = [self.card_up_1.get_name, self.card_down_1.get_name, self.card_left_1.get_name, self.card_right_1.get_name]
             case 2:
                 self.queue.queue[0].add_card(self.card_up_1)
                 self.queue.queue[0].add_card(self.card_down_1)
                 self.queue.queue[1].add_card(self.card_left_1)
                 self.queue.queue[1].add_card(self.card_right_1)
+                self.players[0]["cards"] = [self.card_up_1.get_name, self.card_down_1.get_name]
+                self.players[1]["cards"] = [self.card_left_1.get_name, self.card_right_1.get_name]
             case 3:
                 self.queue.queue[0].add_card(self.card_up_1)
                 self.queue.queue[1].add_card(self.card_down_1)
                 self.queue.queue[2].add_card(self.card_left_1)
                 self.queue.queue[2].add_card(self.card_right_1)
+                self.players[0]["cards"] = [self.card_up_1.get_name]
+                self.players[1]["cards"] = [self.card_down_1.get_name]
+                self.players[2]["cards"] = [self.card_left_1.get_name, self.card_right_1.get_name]
             case 4:
                 self.queue.queue[0].add_card(self.card_up_1)
                 # self.queue.queue[0].add_card(self.card_supreme)
@@ -307,6 +319,10 @@ class GameServer:
                 self.queue.queue[1].add_card(self.card_down_1)
                 self.queue.queue[2].add_card(self.card_left_1)
                 self.queue.queue[3].add_card(self.card_right_1)
+                self.players[0]["cards"] = [self.card_up_1.get_name, self.card_plume.get_name, self.card_croix.get_name]
+                self.players[1]["cards"] = [self.card_down_1.get_name]
+                self.players[2]["cards"] = [self.card_left_1.get_name]
+                self.players[3]["cards"] = [self.card_right_1.get_name]
 
     def init_key_slots(self):
         """This function is used to initialize the key slots."""
@@ -500,36 +516,64 @@ class GameServer:
             self.highlighted_cells = []
 
         return card_selected
+    
+    def broadcast(self, blocking=False) -> bool:
+        """This method allow to broadcast data to every players in the read list
+
+        Args:
+            data (dict): a dict of data to be sent
+        """
+        for cli in self.read_list[1:]:
+            data = {}
+            data.update(self.data)
+            data.update(self.players[self.read_list.index(cli)-1])
+            data = json.dumps(data)
+            log.debug("Sending data to player %d : %s", self.read_list.index(cli)-1, data)
+            cli.setblocking(blocking)
+            cli.send(data.encode())
+            cli.setblocking(False)
+        return True
+    
+    def send_game_state(self,blocking=False):
+        """This function is used to send the initial game state to the clients."""
+        self.data["map"] = self.map_chosen
+        self.data["player_count"] = self.player_count
+        
+        self.broadcast(blocking=blocking)
+        
+    
 
     def run(self):
         """This function is used to run the game."""
 
         # Initialize variables
-        frame_id = 0
+        # frame_id = 0
         card_selected = None
         pawn_selected = None
         highlighted_cells = []
+        
+        self.send_game_state(True)
 
         # Main loop
         while True:
             # Managements of the frames
-            self.clock.tick(TICK_RATE)
-            frame_id += 1
-            self.board.tick(frame_id)
+            # self.clock.tick(TICK_RATE)
+            # frame_id += 1
+            # self.board.tick(frame_id)
 
             # Draw the board
-            self.screen.fill((0, 0, 0))
-            self.board.draw(self.screen)
+            # self.screen.fill((0, 0, 0))
+            # self.board.draw(self.screen)
 
             # Draw the fog if activated
-            if self.fog:
-                camera_offset = (-self.camera.x, -self.camera.y)
-                self.draw_fog(camera_offset)
+            # if self.fog:
+            #     camera_offset = (-self.camera.x, -self.camera.y)
+            #     self.draw_fog(camera_offset)
 
             # Draw the tab
-            self.tab.draw(self.screen)
-            if self.tab.is_expanded:
-                self.tab.black_zone.draw_hitbox(self.screen)
+            # self.tab.draw(self.screen)
+            # if self.tab.is_expanded:
+            #     self.tab.black_zone.draw_hitbox(self.screen)
 
             # End game if all the key slots are full
             if self.is_key_slot_full():
@@ -587,9 +631,9 @@ class GameServer:
                 if event.type == pygame.QUIT:  # pylint: disable=no-member
                     return
                 # Shortcuts for opening and closing the tab
-                elif pygame.key.get_pressed()[pygame.K_TAB]:
-                    self.tab.gray_zone.black_open = not self.tab.gray_zone.black_open
-                    self.tab.toggle_expand()
+                # elif pygame.key.get_pressed()[pygame.K_TAB]:
+                #     self.tab.gray_zone.black_open = not self.tab.gray_zone.black_open
+                #     self.tab.toggle_expand()
                 elif event.type == pygame.KEYDOWN:
                     key_pressed = pygame.key.get_pressed()
                     if key_pressed[pygame.K_1]:
@@ -683,10 +727,6 @@ class GameServer:
             # Swap the card for the next player
             self.swap_card(self.queue)
 
-            pygame.display.flip()
+            # pygame.display.flip()
 
 
-if __name__ == "__main__":
-    main = Game()
-    main.run()
-    pygame.quit()
