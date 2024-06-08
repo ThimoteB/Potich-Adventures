@@ -5,7 +5,7 @@ from queue import Queue
 from time import sleep
 import logging
 import pygame  # pylint: disable=import-error
-import socket
+import socket, select
 
 from game_constants.consts import TICK_RATE, GRAPHICAL_TILE_SIZE, SOUND
 from server_classes import Tab, Board, Player, Card, Key, Camera, Pawn, Enemy, EndTurn
@@ -22,14 +22,16 @@ class GameServer:
     This class is used to create the main loop of the game.
     """
 
-    def __init__(self, read_list, player_count=1, mapchoose="map2.tmx", fog=False):
+    def __init__(self, read_list, player_count=2, mapchoose="map2.tmx", fog=False):
         self.read_list:list[socket.socket] = read_list
         self.read_list[0].setblocking(True)
         """Sockets list -> first socket is the server socket, the others are client sockets"""
         self.data:dict = {
             "player_count": player_count,
-            "current_player": 0,
-            "map": None
+            "current_player": -1,
+            "map": None,
+            "cards": [],
+            "player_number": -1
         }
         self.players:list = [{},{},{},{}]
         
@@ -186,28 +188,28 @@ class GameServer:
 
         self.enemy1 = Enemy(
             # pygame.image.load("images/gamesprites/pawn/char_35.png").convert_alpha(),
-            "Squelette",
+            "Squelette1",
             100,
             20,
             ia=True,
         )
         self.enemy2 = Enemy(
             # pygame.image.load("images/gamesprites/pawn/char_35.png").convert_alpha(),
-            "Squelette",
+            "Squelette2",
             100,
             20,
             ia=True,
         )
         self.enemy3 = Enemy(
             # pygame.image.load("images/gamesprites/pawn/char_35.png").convert_alpha(),
-            "Squelette",
+            "Squelette3",
             100,
             20,
             ia=True,
         )
         self.enemy4 = Enemy(
             # pygame.image.load("images/gamesprites/pawn/char_35.png").convert_alpha(),
-            "Squelette",
+            "Squelette4",
             100,
             20,
             ia=True,
@@ -353,11 +355,17 @@ class GameServer:
         """
         queue.put(queue.get())
         if isinstance(queue.queue[0], Player):
-            self.tab.game_info.current_player = "Joueur " + str(queue.queue[0].number)
+            self.data["current_player"] = queue.queue[0].number-1
+            for player in self.players:
+                player["current_player"] = self.data["current_player"]
+        #     self.tab.game_info.current_player = "Joueur " + str(queue.queue[0].number)
         else:
-            self.tab.game_info.current_player = "Enemy"
+            self.data["current_player"] = -1
+            for player in self.players:
+                player["current_player"] = self.data["current_player"]
+        #     self.tab.game_info.current_player = "Enemy"
         self.unhilight()
-        self.tab.unselect_all_cards()
+        # self.tab.unselect_all_cards()
 
     def add_key_slot(self, key: Key):
         """This function is used to add a key slot.
@@ -530,8 +538,9 @@ class GameServer:
             data.update({
                 "player_number": self.read_list.index(cli)-1,
             })
+            data.update({"elements": self.board.get_all_elements()})
             data = json.dumps(data)
-            log.debug("Sending data to player %d : %s", self.read_list.index(cli)-1, data)
+            log.debug("Sending data to player %d : %s", self.read_list.index(cli), data)
             cli.setblocking(blocking)
             cli.send(data.encode())
             cli.setblocking(False)
@@ -543,6 +552,35 @@ class GameServer:
         self.data["player_count"] = self.player_count
         
         self.broadcast(blocking=blocking)
+    
+    def recv_data(self) -> bool:
+        """This method receive data from the server and store it in the self.data_in attribute
+
+        Returns:
+            bool: False if the receive fail
+        """
+        
+        readable, writable, errored = select.select(self.read_list, [], [])
+        for s in readable: # for each socket (server/client)
+            if s is not self.read_list[0]:
+                data:bytes = s.recv(1024)
+                if not data:
+                    return False
+                self.players[self.read_list.index(s)-1].update(json.loads(data.decode()))
+                log.debug("Received: %s", self.players[self.read_list.index(s)-1])
+        return True
+        
+        # cli_number:int = self.data["current_player"]+1
+        # current_cli:socket.socket = self.read_list[cli_number]
+        
+        # current_cli.setblocking(blocking)
+        # data:bytes = current_cli.recv(1024)
+        # if not data:
+        #     return False
+        # self.players[cli_number] = json.loads(data.decode())
+        # log.debug("Received: %s", self.players[self.data["current_player"]+1])
+        # current_cli(False)
+        # return True
         
     
 
@@ -554,6 +592,8 @@ class GameServer:
         card_selected = None
         pawn_selected = None
         highlighted_cells = []
+        
+        self.data["current_player"] = 0
         
         self.send_game_state(True)
 
@@ -629,107 +669,121 @@ class GameServer:
                                     # TODO - spawn heart particles
                 continue
 
-            for event in pygame.event.get():
+            # for event in pygame.event.get():
                 # TODO: client side event management
-                if event.type == pygame.QUIT:  # pylint: disable=no-member
-                    return
+                # if event.type == pygame.QUIT:  # pylint: disable=no-member
+                #     return
                 # Shortcuts for opening and closing the tab
                 # elif pygame.key.get_pressed()[pygame.K_TAB]:
                 #     self.tab.gray_zone.black_open = not self.tab.gray_zone.black_open
                 #     self.tab.toggle_expand()
-                elif event.type == pygame.KEYDOWN:
-                    key_pressed = pygame.key.get_pressed()
-                    if key_pressed[pygame.K_1]:
-                        card_selected = self.handle_card_selection(0)
-                    elif key_pressed[pygame.K_2]:
-                        card_selected = self.handle_card_selection(1)
-                    elif key_pressed[pygame.K_3]:
-                        card_selected = self.handle_card_selection(2)
-                    elif key_pressed[pygame.K_4]:
-                        card_selected = self.handle_card_selection(3)
+                # elif event.type == pygame.KEYDOWN:
+                    # key_pressed = pygame.key.get_pressed()
+                    # if key_pressed[pygame.K_1]:
+                    #     card_selected = self.handle_card_selection(0)
+                    # elif key_pressed[pygame.K_2]:
+                    #     card_selected = self.handle_card_selection(1)
+                    # elif key_pressed[pygame.K_3]:
+                    #     card_selected = self.handle_card_selection(2)
+                    # elif key_pressed[pygame.K_4]:
+                    #     card_selected = self.handle_card_selection(3)
 
-                    elif event.key == pygame.K_SPACE:  # pylint: disable=no-member
-                        # If the player press space, the turn is skipped
-                        self.swap_player(self.queue)
-                        self.tab.unselect_all_cards()
-                        self.unhilight()
-                        card_selected = None
-                        pawn_selected = None
-                    elif event.key == pygame.K_ESCAPE:  # pylint: disable=no-member
-                        return
+                    # elif event.key == pygame.K_SPACE:  # pylint: disable=no-member
+                    
+                    
+            if isinstance(self.queue.queue[0], Player):
+                self.broadcast()
+                log.info("It's player %d turn", self.data["current_player"]+1)
+                # Wait for player data
+                self.recv_data()
+                # If the player press space, the turn is skipped
+                if self.players[self.data["current_player"]]["skip"]:
+                    # self.swap_player(self.queue)
+                    # self.tab.unselect_all_cards()
+                    self.unhilight()
+                    # card_selected = None
+                    # pawn_selected = None
+                    self.swap_player(self.queue)
+                        # elif event.key == pygame.K_ESCAPE:  # pylint: disable=no-member
+                        #     return
 
-                # CLICKS
-                elif event.type == pygame.MOUSEBUTTONDOWN:  # pylint: disable=no-member
-                    # Check if the click is on the tab ( for not clicking on the cell behind)
-                    # Open or close the tab
-                    if self.tab.gray_zone.on_click(pygame.mouse.get_pos()):
-                        self.tab.handle_input(pygame.mouse.get_pos())
+                    # # CLICKS
+                    # elif event.type == pygame.MOUSEBUTTONDOWN:  # pylint: disable=no-member
+                    #     # Check if the click is on the tab ( for not clicking on the cell behind)
+                    #     # Open or close the tab
+                    #     if self.tab.gray_zone.on_click(pygame.mouse.get_pos()):
+                    #         self.tab.handle_input(pygame.mouse.get_pos())
 
-                    # Check if the click is on the black zone ( for not clicking on the cell behind)
-                    # Detect if a card is selected or unselected
-                    elif self.tab.black_zone.on_click(pygame.mouse.get_pos()):
-                        print(pygame.mouse.get_pos())
-                        previous_card_selected = card_selected
-                        card_selected = self.tab.handle_click(pygame.mouse.get_pos())
-                        # Check if the same card is re-selected
-                        # TODO: client side card management
-                        if card_selected == previous_card_selected:
-                            highlighted_cells = []
-                            card_selected = None
-                            self.unhilight()
-                            continue
+                    #     # Check if the click is on the black zone ( for not clicking on the cell behind)
+                    #     # Detect if a card is selected or unselected
+                    #     elif self.tab.black_zone.on_click(pygame.mouse.get_pos()):
+                    #         print(pygame.mouse.get_pos())
+                    #         previous_card_selected = card_selected
+                    #         card_selected = self.tab.handle_click(pygame.mouse.get_pos())
+                    #         # Check if the same card is re-selected
+                    #         # TODO: client side card management
+                    #         if card_selected == previous_card_selected:
+                    #             highlighted_cells = []
+                    #             card_selected = None
+                    #             self.unhilight()
+                    #             continue
 
-                        if card_selected:
-                            self.unhilight()
-                            highlighted_cells = []
+                    #         if card_selected:
+                    #             self.unhilight()
+                    #             highlighted_cells = []
 
-                    # Case where the click is on the board
-                    else:
-                        # TODO: receive the clicked cell from the client
-                        clicked_cell = self.clicked_cell(pygame.mouse.get_pos())
-                        clicked_cell_y, clicked_cell_x = clicked_cell.y, clicked_cell.x
+                    #     # Case where the click is on the board
+                    #     else:
+                    #         # TODO: receive the clicked cell from the client
+                    #         clicked_cell = self.clicked_cell(pygame.mouse.get_pos())
+                    #         clicked_cell_y, clicked_cell_x = clicked_cell.y, clicked_cell.x
 
-                        # TODO: keep this part of the code with the client cells received
-                        # Check if the click is on a pawn for selecting it
-                        if clicked_cell.game_object and isinstance(
-                            clicked_cell.game_object, Pawn
-                        ):
-                            pawn_selected = self.select_pawn(clicked_cell)
-                            highlighted_cells = []
-                            self.unhilight()
-                            if pawn_selected and card_selected:
-                                possible_moves = self.board.highlight_possible_moves(
-                                    pawn_selected, card_selected
-                                )
-                                highlighted_cells = possible_moves
+                    #         # TODO: keep this part of the code with the client cells received
+                    #         # Check if the click is on a pawn for selecting it
+                    #         if clicked_cell.game_object and isinstance(
+                    #             clicked_cell.game_object, Pawn
+                    #         ):
+                    #             pawn_selected = self.select_pawn(clicked_cell)
+                    #             highlighted_cells = []
+                    #             self.unhilight()
+                    #             if pawn_selected and card_selected:
+                    #                 possible_moves = self.board.highlight_possible_moves(
+                    #                     pawn_selected, card_selected
+                    #                 )
+                    #                 highlighted_cells = possible_moves
 
-                        # TODO: keep this part of the code with the client cells received
-                        # Search if the clicked cell is in the highlighted cells
-                        else:
-                            if (clicked_cell_y, clicked_cell_x) in highlighted_cells:
-                                pawn_y, pawn_x = self.get_coord_pawn(pawn_selected)
-                                new_y, new_x = clicked_cell_y, clicked_cell_x
+                    #         # TODO: keep this part of the code with the client cells received
+                    #         # Search if the clicked cell is in the highlighted cells
+                    #         else:
+                    #             if (clicked_cell_y, clicked_cell_x) in highlighted_cells:
+                    #                 pawn_y, pawn_x = self.get_coord_pawn(pawn_selected)
+                    #                 new_y, new_x = clicked_cell_y, clicked_cell_x
 
-                                # Move the pawn on the new cell
-                                self.move_check_key_and_card(
-                                    pawn_selected, new_y, new_x, pawn_y, pawn_x
-                                )
+                    #                 # Move the pawn on the new cell
+                    #                 self.move_check_key_and_card(
+                    #                     pawn_selected, new_y, new_x, pawn_y, pawn_x
+                    #                 )
 
-                                # End of the turn
-                                self.swap_player(self.queue)
-                                # Reset All variables
-                                self.tab.unselect_all_cards()
-                                self.unhilight()
-                                clicked_cell = None
-                                card_selected = None
-                                pawn_selected = None
+                    #                 # End of the turn
+                    #                 self.swap_player(self.queue)
+                    #                 # Reset All variables
+                    #                 self.tab.unselect_all_cards()
+                    #                 self.unhilight()
+                    #                 clicked_cell = None
+                    #                 card_selected = None
+                    #                 pawn_selected = None
+                # self.broadcast()
             
             # TODO: receive the selected card and pawn from the client
             # TODO: send possible moves to the client and wait for the selected move or another card/pawn
 
             # Swap the card for the next player
-            self.swap_card(self.queue)
+            if True == False:
+                self.swap_card(self.queue)
 
             # pygame.display.flip()
+            
+            
+            
 
 

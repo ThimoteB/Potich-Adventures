@@ -555,6 +555,20 @@ class Board(pygame.sprite.Sprite):
         # for row in self.cells:
         #     for cell in row:
         #         cell.resize(GRAPHICAL_TILE_SIZE, GRAPHICAL_TILE_SIZE)
+        
+    def get_all_elements(self) -> list[list[str, int, int, int]]:
+        """This function is used to get all the elements on the board.
+
+        Returns:
+            list: represents the elements on the board
+        """
+        elements = []
+        for row in self.cells:
+            for cell in row:
+                if cell.game_object:
+                    if isinstance(cell.game_object, Pawn) or isinstance(cell.game_object, Enemy):
+                        elements.append([cell.game_object.name, cell.game_object.health, cell.x, cell.y])
+        return elements
 
     # Classmethods
 

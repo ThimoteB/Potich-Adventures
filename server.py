@@ -28,7 +28,7 @@ class Server(object):
         self.port = PORT
         self.read_list:list = []
         """Sockets list -> first socket is the server socket, the others are client sockets"""
-        self.max_players:int = 1
+        self.max_players:int = 2
         
         # game data
         self.start_status:bool = False

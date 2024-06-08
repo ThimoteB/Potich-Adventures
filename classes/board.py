@@ -386,6 +386,7 @@ class Board(pygame.sprite.Sprite):
         for row in self.cells:
             for cell in row:
                 cell.resize(width, height)
+                
 
     def _load_from_tmx(self, tmx_file: str, rect: bool = False):
         """This function is used to load the board from a tmx file.
@@ -556,6 +557,31 @@ class Board(pygame.sprite.Sprite):
         for row in self.cells:
             for cell in row:
                 cell.resize(GRAPHICAL_TILE_SIZE, GRAPHICAL_TILE_SIZE)
+                
+    def update_elements(self, elements:list[list[str, int, int, int]]) -> None:
+        """This function is used to update the elements of the board.
+
+        Args:
+            elements (list): represents the elements
+        """
+        for row in self.cells:
+            for cell in row:
+                if cell.game_object:
+                    for element in elements:
+                        if isinstance(cell.game_object, Pawn):
+                            if cell.game_object.name == element[0]:
+                                pawn = cell.game_object
+                                cell.remove_object()
+                                pawn.health = element[1]
+                                self.cells[element[2]][element[3]].add_pawn(pawn)
+                        elif isinstance(cell.game_object, Enemy):
+                            if cell.game_object.name == element[0]:
+                                enemy = cell.game_object
+                                cell.remove_object()
+                                enemy.health = element[1]
+                                self.cells[element[2]][element[3]].add_enemy(enemy)
+                                
+                    
 
     # Classmethods
 
