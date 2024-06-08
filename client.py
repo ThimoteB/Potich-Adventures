@@ -28,7 +28,7 @@ class Client:
         self.data_out:dict = {
             "skip": False,
             "selected_card": None, # assigned with the card_selected variable in the main loop
-            "selected_cell": None
+            "selected_cell": [None, None]
         }
         self.data_in:dict = {}
         """Data received from the server"""
@@ -330,7 +330,7 @@ class Client:
         self.card_right_2:Card = card_right_2
         self.card_supreme:Card = card_supreme
         
-        card_list:list[Card] = [
+        self.card_list:list[Card] = [
             card_croix,
             card_lightning,
             card_horloge,
@@ -373,7 +373,16 @@ class Client:
         #         self.queue.queue[3].add_card(self.card_right_1)
         
         for i, card in enumerate(self.data_in["cards"]):
-            for c in card_list:
+            for c in self.card_list:
+                if c.get_name == card:
+                    self.group_slots_card[i].add_item(c)
+                    break
+    
+    def update_cards(self):
+        for i in range(4):
+            self.group_slots_card[i].reset_item()
+        for i, card in enumerate(self.data_in["cards"]):
+            for c in self.card_list:
                 if c.get_name == card:
                     self.group_slots_card[i].add_item(c)
                     break
@@ -580,7 +589,7 @@ class Client:
 
         # Initialize variables
         frame_id = 0
-        card_selected = None
+        card_selected:Card = None
         pawn_selected = None
         highlighted_cells = []
 
@@ -590,6 +599,9 @@ class Client:
             
             # Update the map
             self.board.update_elements(self.data_in["elements"])
+            
+            # Update cards
+            self.update_cards()
             
             # Managements of the frames
             self.clock.tick(TICK_RATE)
@@ -671,52 +683,49 @@ class Client:
                     self.tab.gray_zone.black_open = not self.tab.gray_zone.black_open
                     self.tab.toggle_expand()
                 
-                # Only the current player can play
-                if self.data_in["current_player"] == self.player_number:
-                    if event.type == pygame.KEYDOWN:
-                        # action only if the current player is the client
-                        if self.data_in["current_player"] == self.player_number:
-                            key_pressed = pygame.key.get_pressed()
-                            if key_pressed[pygame.K_1]:
-                                card_selected = self.handle_card_selection(0)
-                            elif key_pressed[pygame.K_2]:
-                                card_selected = self.handle_card_selection(1)
-                            elif key_pressed[pygame.K_3]:
-                                card_selected = self.handle_card_selection(2)
-                            elif key_pressed[pygame.K_4]:
-                                card_selected = self.handle_card_selection(3)
+                elif event.type == pygame.KEYDOWN:
+                    # action only if the current player is the client
+                    if self.data_in["current_player"] == self.player_number:
+                        key_pressed = pygame.key.get_pressed()
+                        if key_pressed[pygame.K_1]:
+                            card_selected = self.handle_card_selection(0)
+                        elif key_pressed[pygame.K_2]:
+                            card_selected = self.handle_card_selection(1)
+                        elif key_pressed[pygame.K_3]:
+                            card_selected = self.handle_card_selection(2)
+                        elif key_pressed[pygame.K_4]:
+                            card_selected = self.handle_card_selection(3)
 
-                            elif event.key == pygame.K_SPACE:  # pylint: disable=no-member
-                                # TODO: tell the server to skip the turn
-                                # If the player press space, the turn is skipped
-                                # self.swap_player(self.queue)
-                                self.tab.unselect_all_cards()
-                                self.unhilight()
-                                card_selected = None
-                                pawn_selected = None
-                                self.data_out["skip"] = True
-                                self.data_out["selected_card"] = None
-                                self.data_out["selected_cell"] = None
-                                self.send_data()
-                                self.data_out["skip"] = False
-                            elif event.key == pygame.K_ESCAPE:  # pylint: disable=no-member
-                                return
+                        elif event.key == pygame.K_SPACE:  # pylint: disable=no-member
+                            # If the player press space, the turn is skipped
+                            # self.swap_player(self.queue)
+                            self.tab.unselect_all_cards()
+                            self.unhilight()
+                            card_selected = None
+                            pawn_selected = None
+                            self.data_out["skip"] = True
+                            self.data_out["selected_card"] = None
+                            self.data_out["selected_cell"] = None
+                            self.send_data()
+                            self.data_out["skip"] = False
+                        elif event.key == pygame.K_ESCAPE:  # pylint: disable=no-member
+                            return
 
                 # CLICKS
                 elif event.type == pygame.MOUSEBUTTONDOWN:  # pylint: disable=no-member
                     # Only the current player can play
-                    if self.data_in["current_player"] == self.player_number:
-                        # Check if the click is on the tab ( for not clicking on the cell behind)
-                        # Open or close the tab
-                        if self.tab.gray_zone.on_click(pygame.mouse.get_pos()):
-                            self.tab.handle_input(pygame.mouse.get_pos())
-                        
-                        # Check if the click is on the black zone ( for not clicking on the cell behind)
-                        # Detect if a card is selected or unselected
-                        elif self.tab.black_zone.on_click(pygame.mouse.get_pos()):
+                    # Check if the click is on the tab ( for not clicking on the cell behind)
+                    # Open or close the tab
+                    if self.tab.gray_zone.on_click(pygame.mouse.get_pos()):
+                        self.tab.handle_input(pygame.mouse.get_pos())
+                    
+                    # Check if the click is on the black zone ( for not clicking on the cell behind)
+                    # Detect if a card is selected or unselected
+                    elif self.tab.black_zone.on_click(pygame.mouse.get_pos()):
+                        if self.data_in["current_player"] == self.player_number:
                             # action only if the current player is the client
                             if self.data_in["current_player"] == self.player_number:
-                                log.debug(pygame.mouse.get_pos())
+                                log.debug("Mouse click at %s", pygame.mouse.get_pos())
                                 previous_card_selected = card_selected
                                 card_selected = self.tab.handle_click(pygame.mouse.get_pos())
                                 # Check if the same card is re-selected
@@ -724,15 +733,19 @@ class Client:
                                     highlighted_cells = []
                                     card_selected = None
                                     self.unhilight()
+                                    log.debug("Unselected card %s", previous_card_selected)
+                                    self.data_out["selected_card"] = None
+                                    self.send_data()
                                     continue
 
                                 if card_selected:
+                                    log.debug("Selected card: %s", card_selected.name)
                                     self.unhilight()
                                     highlighted_cells = []
                                 
-                                # add the selected card to the data to be sent when a pawn is clicked
-                                self.data_out["selected_card"] = card_selected
-                                self.send_data()
+                                    # send the card
+                                    self.data_out["selected_card"] = card_selected.name
+                                    self.send_data()
 
                     # Case where the click is on the board
                     else:
@@ -740,8 +753,8 @@ class Client:
                         if self.data_in["current_player"] == self.player_number:
                             clicked_cell = self.clicked_cell(pygame.mouse.get_pos())
                             log.debug("Clicked cell: %s", clicked_cell)
-                            # self.data_out["selected_cell"] = clicked_cell
-                            # self.send_data()
+                            self.data_out["selected_cell"] = [clicked_cell.x, clicked_cell.y]
+                            self.send_data()
                             
                             # clicked_cell_y, clicked_cell_x = clicked_cell.y, clicked_cell.x
 

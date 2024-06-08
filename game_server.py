@@ -545,7 +545,7 @@ class GameServer:
             try:
                 cli.send(data.encode())
             except BrokenPipeError:
-                log.error("Error : broken client pipe from %s", self.read_list.index(cli))
+                log.error("Error ! Client %s : connection lost.", self.read_list.index(cli))
                 for other_cli in self.read_list[1:]:
                     if other_cli is not cli:
                         other_cli.close()
@@ -608,24 +608,6 @@ class GameServer:
 
         # Main loop
         while True:
-            # Managements of the frames
-            # self.clock.tick(TICK_RATE)
-            # frame_id += 1
-            # self.board.tick(frame_id)
-
-            # Draw the board
-            # self.screen.fill((0, 0, 0))
-            # self.board.draw(self.screen)
-
-            # Draw the fog if activated
-            # if self.fog:
-            #     camera_offset = (-self.camera.x, -self.camera.y)
-            #     self.draw_fog(camera_offset)
-
-            # Draw the tab
-            # self.tab.draw(self.screen)
-            # if self.tab.is_expanded:
-            #     self.tab.black_zone.draw_hitbox(self.screen)
 
             # End game if all the key slots are full
             if self.is_key_slot_full():
@@ -677,27 +659,6 @@ class GameServer:
                                             heal_sound.play()
                                     # TODO - spawn heart particles
                 continue
-
-            # for event in pygame.event.get():
-                # TODO: client side event management
-                # if event.type == pygame.QUIT:  # pylint: disable=no-member
-                #     return
-                # Shortcuts for opening and closing the tab
-                # elif pygame.key.get_pressed()[pygame.K_TAB]:
-                #     self.tab.gray_zone.black_open = not self.tab.gray_zone.black_open
-                #     self.tab.toggle_expand()
-                # elif event.type == pygame.KEYDOWN:
-                    # key_pressed = pygame.key.get_pressed()
-                    # if key_pressed[pygame.K_1]:
-                    #     card_selected = self.handle_card_selection(0)
-                    # elif key_pressed[pygame.K_2]:
-                    #     card_selected = self.handle_card_selection(1)
-                    # elif key_pressed[pygame.K_3]:
-                    #     card_selected = self.handle_card_selection(2)
-                    # elif key_pressed[pygame.K_4]:
-                    #     card_selected = self.handle_card_selection(3)
-
-                    # elif event.key == pygame.K_SPACE:  # pylint: disable=no-member
                     
                     
             if isinstance(self.queue.queue[0], Player):
@@ -715,6 +676,44 @@ class GameServer:
                     self.swap_player(self.queue)
                         # elif event.key == pygame.K_ESCAPE:  # pylint: disable=no-member
                         #     return
+                
+                # If a card is selected
+                elif self.players[self.data["current_player"]]["selected_card"] is not None:
+                    # Get what the player selected on the board
+                    if self.players[self.data["current_player"]]["selected_cell"][0] is not None and self.players[self.data["current_player"]]["selected_cell"][1] is not None:
+                        clicked_cell = self.board.cells[self.players[self.data["current_player"]]["selected_cell"][0]][self.players[self.data["current_player"]]["selected_cell"][1]]
+                        # TODO: get the selected card OBJECT
+                        if clicked_cell.game_object and isinstance(clicked_cell.game_object, Pawn):
+                            pawn_selected = clicked_cell.game_object
+                            highlighted_cells = []
+                            self.unhilight()
+                            possible_moves = self.board.highlight_possible_moves(
+                                pawn_selected, card_selected
+                            )
+                            highlighted_cells = possible_moves
+                        else:
+                            # Search if the clicked cell is in the highlighted cells
+                            if (self.players[self.data["current_player"]]["selected_cell"][0], self.players[self.data["current_player"]]["selected_cell"][1]) in highlighted_cells:
+                                pawn_y, pawn_x = self.get_coord_pawn(pawn_selected)
+                                new_y, new_x = self.players[self.data["current_player"]]["selected_cell"][0], self.players[self.data["current_player"]]["selected_cell"][1]
+
+                                # Move the pawn on the new cell
+                                self.move_check_key_and_card(
+                                    pawn_selected, new_y, new_x, pawn_y, pawn_x
+                                )
+
+                                # End of the turn
+                                self.swap_player(self.queue)
+                                # Reset All variables
+                                self.tab.unselect_all_cards()
+                                self.unhilight()
+                                clicked_cell = None
+                                card_selected = None
+                                pawn_selected = None  
+                                self.players[self.data["current_player"]]["selected_card"] = None
+                                self.players[self.data["current_player"]]["selected_cell"] = None
+                                                  
+                    
 
                     # # CLICKS
                     # elif event.type == pygame.MOUSEBUTTONDOWN:  # pylint: disable=no-member
@@ -787,8 +786,7 @@ class GameServer:
             # TODO: send possible moves to the client and wait for the selected move or another card/pawn
 
             # Swap the card for the next player
-            if True == False:
-                self.swap_card(self.queue)
+            # self.swap_card(self.queue)
 
             # pygame.display.flip()
             
