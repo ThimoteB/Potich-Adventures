@@ -291,7 +291,6 @@ class Main:
                     LobbyPage(self.screen).draw()
                 else:
                     log.warning("Connection failed")
-                    self.sock.close()
                     
             # Connection etablished : waiting for other players
             elif self.current_state == "OnlineLobby":
