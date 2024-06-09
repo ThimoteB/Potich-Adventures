@@ -290,17 +290,6 @@ class Client:
             y, x = enemy_positions[mapchoose][i]
             self.board.cells[y][x].add_pawn(enemy)
 
-        # TODO: the client does not need to know the queue
-        # self.queue = Queue()
-        # for player in range(self.player_count):
-        #     self.queue.put(Player(player + 1))
-        # self.queue.put(self.enemy1)
-        # self.queue.put(self.enemy2)
-        # self.queue.put(self.enemy3)
-        # if not mapchoose == "map_courte.tmx":
-        #     self.queue.put(self.enemy4)
-        # self.queue.put(EndTurn())
-
         self.init_cards_slots()
         self.init_key_slots()
         self.card_selected = None
@@ -346,31 +335,6 @@ class Client:
             card_right_2,
             card_supreme
         ]
-
-        # match self.player_count:
-        #     case 1:
-        #         self.queue.queue[0].add_card(self.card_up_1)
-        #         self.queue.queue[0].add_card(self.card_down_1)
-        #         self.queue.queue[0].add_card(self.card_left_1)
-        #         self.queue.queue[0].add_card(self.card_right_1)
-        #     case 2:
-        #         self.queue.queue[0].add_card(self.card_up_1)
-        #         self.queue.queue[0].add_card(self.card_down_1)
-        #         self.queue.queue[1].add_card(self.card_left_1)
-        #         self.queue.queue[1].add_card(self.card_right_1)
-        #     case 3:
-        #         self.queue.queue[0].add_card(self.card_up_1)
-        #         self.queue.queue[1].add_card(self.card_down_1)
-        #         self.queue.queue[2].add_card(self.card_left_1)
-        #         self.queue.queue[2].add_card(self.card_right_1)
-        #     case 4:
-        #         self.queue.queue[0].add_card(self.card_up_1)
-        #         # self.queue.queue[0].add_card(self.card_supreme)
-        #         self.queue.queue[0].add_card(self.card_plume)
-        #         self.queue.queue[0].add_card(self.card_croix)
-        #         self.queue.queue[1].add_card(self.card_down_1)
-        #         self.queue.queue[2].add_card(self.card_left_1)
-        #         self.queue.queue[3].add_card(self.card_right_1)
         
         for i, card in enumerate(self.data_in["cards"]):
             for c in self.card_list:
@@ -395,34 +359,6 @@ class Client:
             self.tab.third_key_slot,
             self.tab.fourth_key_slot,
         ]
-
-    # TODO: no need to swap card for the client
-    # def swap_card(self, queue: Queue):
-    #     """This function is used to swap the cards depending on the player.
-
-    #     Args:
-    #         queue (Queue): queue object
-    #     """
-    #     for slot in self.group_slots_card:
-    #         slot.reset_item()
-    #     if isinstance(queue.queue[0], Player):
-    #         for card in queue.queue[0].cards:
-    #             self.group_slots_card[queue.queue[0].cards.index(card)].add_item(card)
-
-    # def swap_player(self, queue: Queue):
-    #     """This function is used to swap the player.
-
-    #     Args:
-    #         queue (Queue): queue object
-    #     """
-    #     # TODO: maybe send a signal to all clients ?
-    #     queue.put(queue.get())
-    #     if isinstance(queue.queue[0], Player):
-    #         self.tab.game_info.current_player = "Joueur " + str(queue.queue[0].number)
-    #     else:
-    #         self.tab.game_info.current_player = "Enemy"
-    #     self.unhilight()
-    #     self.tab.unselect_all_cards()
 
     def add_key_slot(self, key: Key):
         """This function is used to add a key slot.
@@ -510,7 +446,6 @@ class Client:
     #         )
     #     self.board.move_or_attack(pawn_selected, new_y, new_x, (pawn_y, pawn_x))
 
-    # TODO: client only function
     def clicked_cell(self, mouse_pos: tuple[int, int]):
         """This function is used to get the clicked cell.
 
@@ -598,7 +533,7 @@ class Client:
             self.recv_data()
             
             # Update the map
-            self.board.update_elements(self.data_in["elements"])
+            self.board.update_elements(self.data_in["elements"], self.data_in["possible_moves"])
             
             # Update cards
             self.update_cards()
@@ -626,53 +561,6 @@ class Client:
             if self.is_key_slot_full():
                 self.end_game()
                 break
-            
-            # TODO: server check
-            # Case where the current element of the queue is an enemy
-            # if isinstance(self.queue.queue[0], Enemy):
-            #     if self.queue.queue[0].health <= 0:
-            #         self.queue.get()
-            #         continue
-            #     self.board.move_enemy(self.queue.queue[0], self.player_count)
-            #     self.swap_player(self.queue)
-            #     continue
-
-            # if isinstance(self.queue.queue[0], EndTurn):
-            #     # Actions that happens at the end of a turn
-            #     # TODO: keep this for the server
-            #     self.swap_player(self.queue)
-
-            #     # heal all the pawns that are on healing tiles
-            #     # TODO: keep this for the server (and send a signal to the client to update the health of the pawns)
-            #     for row in self.board.cells:
-            #         for cell in row:
-            #             if cell.game_object and isinstance(cell.game_object, Pawn):
-            #                 if cell.is_heal_cell:
-            #                     old_health = cell.game_object.health
-            #                     cell.game_object.health = min(
-            #                         cell.game_object.health + cell.heal_value, 100
-            #                     )  # maximum 100 HP
-            #                     if cell.game_object.health != old_health:
-            #                         self.tab.log_event.write_logfile(
-            #                             "log_event.txt",
-            #                             "%s a été soigné de %d HP"
-            #                             % (
-            #                                 cell.game_object.name,
-            #                                 cell.heal_value,
-            #                             ),
-            #                         )
-            #                     if SOUND:
-            #                         if cell.game_object.health != old_health:
-            #                             heal_sound = pygame.mixer.Sound(
-            #                                 "sounds/heal.mp3"
-            #                             )
-            #                             if cell.heal_value >= 10:
-            #                                 heal_sound.play()
-            #                             else:
-            #                                 heal_sound.set_volume(0.3)
-            #                                 heal_sound.play()
-            #                         # TODO - spawn heart particles
-            #     continue
 
             for event in pygame.event.get():
                 # TODO: client side event management
@@ -698,7 +586,6 @@ class Client:
 
                         elif event.key == pygame.K_SPACE:  # pylint: disable=no-member
                             # If the player press space, the turn is skipped
-                            # self.swap_player(self.queue)
                             self.tab.unselect_all_cards()
                             self.unhilight()
                             card_selected = None
@@ -722,30 +609,30 @@ class Client:
                     # Check if the click is on the black zone ( for not clicking on the cell behind)
                     # Detect if a card is selected or unselected
                     elif self.tab.black_zone.on_click(pygame.mouse.get_pos()):
+                        # action only if the current player is the client
                         if self.data_in["current_player"] == self.player_number:
-                            # action only if the current player is the client
-                            if self.data_in["current_player"] == self.player_number:
-                                log.debug("Mouse click at %s", pygame.mouse.get_pos())
-                                previous_card_selected = card_selected
-                                card_selected = self.tab.handle_click(pygame.mouse.get_pos())
-                                # Check if the same card is re-selected
-                                if card_selected == previous_card_selected:
-                                    highlighted_cells = []
-                                    card_selected = None
-                                    self.unhilight()
-                                    log.debug("Unselected card %s", previous_card_selected)
-                                    self.data_out["selected_card"] = None
-                                    self.send_data()
-                                    continue
+                            self.data_out["selected_cell"] = [None, None]
+                            log.debug("Mouse click at %s", pygame.mouse.get_pos())
+                            previous_card_selected = card_selected
+                            card_selected = self.tab.handle_click(pygame.mouse.get_pos())
+                            # Check if the same card is re-selected
+                            if card_selected == previous_card_selected:
+                                highlighted_cells = []
+                                card_selected = None
+                                self.unhilight()
+                                log.debug("Unselected card %s", previous_card_selected)
+                                self.data_out["selected_card"] = None
+                                self.send_data()
+                                continue
 
-                                if card_selected:
-                                    log.debug("Selected card: %s", card_selected.name)
-                                    self.unhilight()
-                                    highlighted_cells = []
-                                
-                                    # send the card
-                                    self.data_out["selected_card"] = card_selected.name
-                                    self.send_data()
+                            if card_selected:
+                                log.debug("Selected card: %s", card_selected.name)
+                                self.unhilight()
+                                highlighted_cells = []
+                            
+                                # send the card
+                                self.data_out["selected_card"] = card_selected.name
+                                self.send_data()
 
                     # Case where the click is on the board
                     else:
@@ -753,62 +640,13 @@ class Client:
                         if self.data_in["current_player"] == self.player_number:
                             clicked_cell = self.clicked_cell(pygame.mouse.get_pos())
                             log.debug("Clicked cell: %s", clicked_cell)
-                            self.data_out["selected_cell"] = [clicked_cell.x, clicked_cell.y]
+                            self.data_out["selected_cell"] = [clicked_cell.y, clicked_cell.x]
                             self.send_data()
                             
-                            # clicked_cell_y, clicked_cell_x = clicked_cell.y, clicked_cell.x
-
-                            # TODO: let the sever handle the click on the cell
-                            # Check if the click is on a pawn for selecting it
-                            # if clicked_cell.game_object and isinstance(
-                            #     clicked_cell.game_object, Pawn
-                            # ):
-                            #     pawn_selected = self.select_pawn(clicked_cell)
-                            #     highlighted_cells = []
-                            #     self.unhilight()
-                                # if pawn_selected and card_selected:
-                                    # possible_moves = self.board.highlight_possible_moves(
-                                    #     pawn_selected, card_selected
-                                    # )
-                                    # highlighted_cells = possible_moves
-                                    # let the calculation be done on the server
-                                    # TODO: highlight cells with server data
-
-                            # TODO: keep this part of the code with the client cells received
-                            # Search if the clicked cell is in the highlighted cells
-                            # else:
-                            #     if (clicked_cell_y, clicked_cell_x) in highlighted_cells:
-                            #         pawn_y, pawn_x = self.get_coord_pawn(pawn_selected)
-                            #         new_y, new_x = clicked_cell_y, clicked_cell_x
-
-                            #         # Move the pawn on the new cell
-                            #         self.move_check_key_and_card(
-                            #             pawn_selected, new_y, new_x, pawn_y, pawn_x
-                            #         )
-
-                            #         # End of the turn
-                            #         self.swap_player(self.queue)
-                            #         # Reset All variables
-                            #         self.tab.unselect_all_cards()
-                            #         self.unhilight()
-                            #         clicked_cell = None
-                            #         card_selected = None
-                            #         pawn_selected = None
-            
-            
-            
-            # TODO: receive the selected card and pawn from the client
-            # TODO: send possible moves to the client and wait for the selected move or another card/pawn
-            
             # Handle camera movement
             self.handle_input_cam()
 
-            # Swap the card for the next player
-            # self.swap_card(self.queue)
-
             pygame.display.flip()
-            
-            # TODO: render the player swap
 
 
 if __name__ == "__main__":

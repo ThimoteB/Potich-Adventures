@@ -567,7 +567,7 @@ class Board(pygame.sprite.Sprite):
             for cell in row:
                 if cell.game_object:
                     if isinstance(cell.game_object, Pawn) or isinstance(cell.game_object, Enemy):
-                        elements.append([cell.game_object.name, cell.game_object.health, cell.x, cell.y])
+                        elements.append([cell.game_object.name, cell.game_object.health, cell.y, cell.x])
         return elements
 
     # Classmethods

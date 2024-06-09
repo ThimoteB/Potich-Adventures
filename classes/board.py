@@ -558,7 +558,7 @@ class Board(pygame.sprite.Sprite):
             for cell in row:
                 cell.resize(GRAPHICAL_TILE_SIZE, GRAPHICAL_TILE_SIZE)
                 
-    def update_elements(self, elements:list[list[str, int, int, int]]) -> None:
+    def update_elements(self, elements:list[list[str, int, int, int]], possible_moves:list[int,int]) -> None:
         """This function is used to update the elements of the board.
 
         Args:
@@ -580,9 +580,16 @@ class Board(pygame.sprite.Sprite):
                                 cell.remove_object()
                                 enemy.health = element[1]
                                 self.cells[element[2]][element[3]].add_enemy(enemy)
+        
+        for row in self.cells:
+            for cell in row:
+                cell.unhighlight()
+        
+        if possible_moves:
+            for move_y, move_x in possible_moves:
+                cell = self.cells[move_y][move_x]
+                cell.highlight()
                                 
-                    
-
     # Classmethods
 
     @classmethod

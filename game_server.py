@@ -31,7 +31,9 @@ class GameServer:
             "current_player": -1,
             "map": None,
             "cards": [],
-            "player_number": -1
+            "player_number": -1,
+            "possible_moves": [],
+            "selected_cell": []
         }
         self.players:list = [{},{},{},{}]
         
@@ -40,15 +42,6 @@ class GameServer:
         
         # pygame.init()  # pylint: disable=no-member
         self.player_count = player_count
-        # self.screen = pygame.display.set_mode(
-        #     flags=pygame.FULLSCREEN  # pylint: disable=no-member
-        #     flags=pygame.FULLSCREEN  # pylint: disable=no-member
-        # )  # pylint: disable=no-member
-        # )  # pylint: disable=no-member
-        # self.screen = pygame.display.set_mode((1600, 900))  # pylint: disable=no-member
-        # self.rect_fullscreen = pygame.Rect(
-        #     0, 0, self.screen.get_width(), self.screen.get_height()
-        # )
         self.clock = pygame.time.Clock()
         self.camera = self.init_camera(mapchoose)
         # self.camera.set_bounds(self.screen.get_width(), self.screen.get_height())
@@ -162,53 +155,45 @@ class GameServer:
         self.list_pawns = []
         self.list_enemies = []
         self.pawn1 = Pawn(
-            # pygame.image.load("images/gamesprites/pawn/char_18.png").convert_alpha(),
             "Gork",
             100,
             20,
         )
         self.pawn2 = Pawn(
-            # pygame.image.load("images/gamesprites/pawn/char_32.png").convert_alpha(),
             "Nano",
             100,
             20,
         )
         self.pawn3 = Pawn(
-            # pygame.image.load("images/gamesprites/pawn/char_47.png").convert_alpha(),
             "Sylphe",
             100,
             20,
         )
         self.pawn4 = Pawn(
-            # pygame.image.load("images/gamesprites/pawn/char_44.png").convert_alpha(),
             "Poticha",
             100,
             20,
         )
 
         self.enemy1 = Enemy(
-            # pygame.image.load("images/gamesprites/pawn/char_35.png").convert_alpha(),
             "Squelette1",
             100,
             20,
             ia=True,
         )
         self.enemy2 = Enemy(
-            # pygame.image.load("images/gamesprites/pawn/char_35.png").convert_alpha(),
             "Squelette2",
             100,
             20,
             ia=True,
         )
         self.enemy3 = Enemy(
-            # pygame.image.load("images/gamesprites/pawn/char_35.png").convert_alpha(),
             "Squelette3",
             100,
             20,
             ia=True,
         )
         self.enemy4 = Enemy(
-            # pygame.image.load("images/gamesprites/pawn/char_35.png").convert_alpha(),
             "Squelette4",
             100,
             20,
@@ -386,22 +371,6 @@ class GameServer:
         """
         return all(slot.item is not None for slot in self.group_slots_key)
 
-    # def handle_input_cam(self):
-    #     """This function is used to handle the input of the camera."""
-    #     dx, dy = 0, 0
-    #     keys = pygame.key.get_pressed()
-
-    #     if keys[pygame.K_LEFT]:  # pylint: disable=no-member
-    #         dx = -20
-    #     if keys[pygame.K_RIGHT]:  # pylint: disable=no-member
-    #         dx = 20
-    #     if keys[pygame.K_UP]:  # pylint: disable=no-member
-    #         dy = -20
-    #     if keys[pygame.K_DOWN]:  # pylint: disable=no-member
-    #         dy = 20
-
-    #     self.camera.move(dx, dy)
-
     def move_check_key_and_card(
         self, pawn_selected: Pawn, new_y: int, new_x: int, pawn_y: int, pawn_x: int
     ):
@@ -451,29 +420,6 @@ class GameServer:
                 ),
             )
         self.board.move_or_attack(pawn_selected, new_y, new_x, (pawn_y, pawn_x))
-
-    # def clicked_cell(self, mouse_pos: tuple[int, int]):
-    #     """This function is used to get the clicked cell.
-
-    #     Args:
-    #         mouse_pos (tuple[int, int]): mouse position
-
-    #     Returns:
-    #         Cell: cell object
-    #     """
-    #     mouse_x, mouse_y = mouse_pos
-    #     map_x = (mouse_x + self.camera.x) // GRAPHICAL_TILE_SIZE
-    #     map_y = (mouse_y + self.camera.y) // GRAPHICAL_TILE_SIZE
-    #     if 0 <= map_x < self.board.width and 0 <= map_y < self.board.height:
-    #         clicked_cell = self.board.cells[map_y][map_x]
-    #         log.debug("Clicked cell: (%d, %d)", clicked_cell.y, clicked_cell.x)
-    #         if isinstance(clicked_cell.game_object, MapCard or Card):
-    #             log.debug("Card: %s", clicked_cell.game_object.card.name)
-    #         elif isinstance(clicked_cell.game_object, MapKey or Key):
-    #             log.debug("Key: %s", clicked_cell.game_object.key.name)
-    #         else:
-    #             log.debug("GAME OBJECT: %s", clicked_cell.game_object)
-    #     return clicked_cell
 
     def select_pawn(self, cell: object):
         """This function is used to select a pawn.
@@ -600,7 +546,7 @@ class GameServer:
         # frame_id = 0
         card_selected = None
         pawn_selected = None
-        highlighted_cells = []
+        self.highlighted_cells = []
         
         self.data["current_player"] = 0
         
@@ -663,6 +609,7 @@ class GameServer:
                     
             if isinstance(self.queue.queue[0], Player):
                 self.broadcast()
+                self.data["possible_moves"] = []
                 log.info("It's player %d turn", self.data["current_player"]+1)
                 # Wait for player data
                 self.recv_data()
@@ -679,21 +626,28 @@ class GameServer:
                 
                 # If a card is selected
                 elif self.players[self.data["current_player"]]["selected_card"] is not None:
+                    # get the selected card object
+                    for card in self.queue.queue[0].cards:
+                        if card.get_name == self.players[self.data["current_player"]]["selected_card"]:
+                            card_selected = card
+                            break
+                            
                     # Get what the player selected on the board
                     if self.players[self.data["current_player"]]["selected_cell"][0] is not None and self.players[self.data["current_player"]]["selected_cell"][1] is not None:
                         clicked_cell = self.board.cells[self.players[self.data["current_player"]]["selected_cell"][0]][self.players[self.data["current_player"]]["selected_cell"][1]]
                         # TODO: get the selected card OBJECT
                         if clicked_cell.game_object and isinstance(clicked_cell.game_object, Pawn):
                             pawn_selected = clicked_cell.game_object
-                            highlighted_cells = []
+                            self.highlighted_cells = []
                             self.unhilight()
                             possible_moves = self.board.highlight_possible_moves(
                                 pawn_selected, card_selected
                             )
-                            highlighted_cells = possible_moves
+                            self.highlighted_cells = possible_moves
+                            self.data["possible_moves"] = self.highlighted_cells
                         else:
                             # Search if the clicked cell is in the highlighted cells
-                            if (self.players[self.data["current_player"]]["selected_cell"][0], self.players[self.data["current_player"]]["selected_cell"][1]) in highlighted_cells:
+                            if (self.players[self.data["current_player"]]["selected_cell"][0], self.players[self.data["current_player"]]["selected_cell"][1]) in self.highlighted_cells:
                                 pawn_y, pawn_x = self.get_coord_pawn(pawn_selected)
                                 new_y, new_x = self.players[self.data["current_player"]]["selected_cell"][0], self.players[self.data["current_player"]]["selected_cell"][1]
 
@@ -701,96 +655,15 @@ class GameServer:
                                 self.move_check_key_and_card(
                                     pawn_selected, new_y, new_x, pawn_y, pawn_x
                                 )
+                                self.players[self.data["current_player"]]["selected_card"] = None
+                                self.players[self.data["current_player"]]["selected_cell"] = None
+                                self.data["possible_moves"] = []
 
                                 # End of the turn
                                 self.swap_player(self.queue)
                                 # Reset All variables
-                                self.tab.unselect_all_cards()
                                 self.unhilight()
                                 clicked_cell = None
                                 card_selected = None
                                 pawn_selected = None  
-                                self.players[self.data["current_player"]]["selected_card"] = None
-                                self.players[self.data["current_player"]]["selected_cell"] = None
-                                                  
-                    
-
-                    # # CLICKS
-                    # elif event.type == pygame.MOUSEBUTTONDOWN:  # pylint: disable=no-member
-                    #     # Check if the click is on the tab ( for not clicking on the cell behind)
-                    #     # Open or close the tab
-                    #     if self.tab.gray_zone.on_click(pygame.mouse.get_pos()):
-                    #         self.tab.handle_input(pygame.mouse.get_pos())
-
-                    #     # Check if the click is on the black zone ( for not clicking on the cell behind)
-                    #     # Detect if a card is selected or unselected
-                    #     elif self.tab.black_zone.on_click(pygame.mouse.get_pos()):
-                    #         print(pygame.mouse.get_pos())
-                    #         previous_card_selected = card_selected
-                    #         card_selected = self.tab.handle_click(pygame.mouse.get_pos())
-                    #         # Check if the same card is re-selected
-                    #         # TODO: client side card management
-                    #         if card_selected == previous_card_selected:
-                    #             highlighted_cells = []
-                    #             card_selected = None
-                    #             self.unhilight()
-                    #             continue
-
-                    #         if card_selected:
-                    #             self.unhilight()
-                    #             highlighted_cells = []
-
-                    #     # Case where the click is on the board
-                    #     else:
-                    #         # TODO: receive the clicked cell from the client
-                    #         clicked_cell = self.clicked_cell(pygame.mouse.get_pos())
-                    #         clicked_cell_y, clicked_cell_x = clicked_cell.y, clicked_cell.x
-
-                    #         # TODO: keep this part of the code with the client cells received
-                    #         # Check if the click is on a pawn for selecting it
-                    #         if clicked_cell.game_object and isinstance(
-                    #             clicked_cell.game_object, Pawn
-                    #         ):
-                    #             pawn_selected = self.select_pawn(clicked_cell)
-                    #             highlighted_cells = []
-                    #             self.unhilight()
-                    #             if pawn_selected and card_selected:
-                    #                 possible_moves = self.board.highlight_possible_moves(
-                    #                     pawn_selected, card_selected
-                    #                 )
-                    #                 highlighted_cells = possible_moves
-
-                    #         # TODO: keep this part of the code with the client cells received
-                    #         # Search if the clicked cell is in the highlighted cells
-                    #         else:
-                    #             if (clicked_cell_y, clicked_cell_x) in highlighted_cells:
-                    #                 pawn_y, pawn_x = self.get_coord_pawn(pawn_selected)
-                    #                 new_y, new_x = clicked_cell_y, clicked_cell_x
-
-                    #                 # Move the pawn on the new cell
-                    #                 self.move_check_key_and_card(
-                    #                     pawn_selected, new_y, new_x, pawn_y, pawn_x
-                    #                 )
-
-                    #                 # End of the turn
-                    #                 self.swap_player(self.queue)
-                    #                 # Reset All variables
-                    #                 self.tab.unselect_all_cards()
-                    #                 self.unhilight()
-                    #                 clicked_cell = None
-                    #                 card_selected = None
-                    #                 pawn_selected = None
-                # self.broadcast()
-            
-            # TODO: receive the selected card and pawn from the client
-            # TODO: send possible moves to the client and wait for the selected move or another card/pawn
-
-            # Swap the card for the next player
-            # self.swap_card(self.queue)
-
-            # pygame.display.flip()
-            
-            
-            
-
-
+                    card_selected = None
