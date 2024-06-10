@@ -35,7 +35,7 @@ class Key(pygame.sprite.Sprite):  # pylint: disable=too-few-public-methods
 
 key_slot_width = 80
 key_slot_height = 80
-list_of_keys = []
+list_of_keys:list[Key] = []
 
 red_key = Key("images/red key.png", key_slot_width, key_slot_height, "red key")
 blue_key = Key("images/blue key.png", key_slot_width, key_slot_height, "blue key")

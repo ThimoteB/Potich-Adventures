@@ -22,31 +22,41 @@ class GameServer:
     This class is used to create the main loop of the game.
     """
 
-    def __init__(self, read_list, player_count=2, mapchoose="map2.tmx", fog=False):
+    def __init__(self, read_list, player_count=-1, mapchoose="map2.tmx", fog=False):
         self.read_list:list[socket.socket] = read_list
         self.read_list[0].setblocking(True)
         """Sockets list -> first socket is the server socket, the others are client sockets"""
         self.data:dict = {
-            "player_count": player_count,
+            "player_count": len(self.read_list[1:]),
             "current_player": -1,
             "map": None,
             "cards": [],
+            "keys": [],
             "player_number": -1,
             "possible_moves": [],
-            "selected_cell": []
+            "selected_cell": [],
+            "card_map_list": [],
+            "key_map_list": [],
         }
-        self.players:list = [{},{},{},{}]
+        self.players:list[dict,dict,dict,dict] = [{},{},{},{}]
+        for pl in self.players:
+            pl.update({
+                "skip": False,
+                "selected_card": None,
+                "selected_cell": [None, None]
+            })
         
         """Players[0] = read_list[1], etc...
         """
         
         # pygame.init()  # pylint: disable=no-member
-        self.player_count = player_count
+        self.player_count = len(self.read_list[1:])
         self.clock = pygame.time.Clock()
         self.camera = self.init_camera(mapchoose)
         # self.camera.set_bounds(self.screen.get_width(), self.screen.get_height())
         self.map_chosen = mapchoose
         self.board = Board.from_tmx("maps/" + self.map_chosen, False)
+        self.data.update(self.board.get_item_spawn())
         # self.board.resize_tiles(GRAPHICAL_TILE_SIZE, GRAPHICAL_TILE_SIZE)
         self.tab = Tab()
         self.init_game_elements(mapchoose)
@@ -388,37 +398,41 @@ class GameServer:
                 self.queue.queue[0].add_card(
                     self.board.cells[new_y][new_x].game_object.card
                 )
+                self.players[self.data["current_player"]]["cards"].append(self.board.cells[new_y][new_x].game_object.card.get_name)
                 # ex : Le joueur 1 a récupéré la carte croix
-                self.tab.log_event.write_logfile(
-                    "log_event.txt",
-                    "Le joueur %d a récupéré la carte %s "
-                    % (
-                        self.queue.queue[0].number,
-                        self.board.cells[new_y][new_x].game_object.card.name,
-                    ),
-                )
+                # self.tab.log_event.write_logfile(
+                #     "log_event.txt",
+                #     "Le joueur %d a récupéré la carte %s "
+                #     % (
+                #         self.queue.queue[0].number,
+                #         self.board.cells[new_y][new_x].game_object.card.name,
+                #     ),
+                # )
+                pass
             else:
-                self.tab.log_event.write_logfile(
-                    "log_event.txt",
-                    "Le joueur %d a déchiré la carte %s "
-                    % (
-                        self.queue.queue[0].number,
-                        self.board.cells[new_y][new_x].game_object.card.name,
-                    ),
-                )
+                # self.tab.log_event.write_logfile(
+                #     "log_event.txt",
+                #     "Le joueur %d a déchiré la carte %s "
+                #     % (
+                #         self.queue.queue[0].number,
+                #         self.board.cells[new_y][new_x].game_object.card.name,
+                #     ),
+                # )
+                pass
 
         log.debug(isinstance(self.board.cells[new_y][new_x].game_object, MapKey or Key))
         if isinstance(self.board.cells[new_y][new_x].game_object, MapKey or Key):
             self.add_key_slot(self.board.cells[new_y][new_x].game_object.key)
+            self.data["keys"].append(self.board.cells[new_y][new_x].game_object.key.name)
             # ex : Le joueur 1 a récupéré la clé rouge
-            self.tab.log_event.write_logfile(
-                "log_event.txt",
-                "Le joueur %d a récupéré la clé %s "
-                % (
-                    self.queue.queue[0].number,
-                    self.board.cells[new_y][new_x].game_object.key.name,
-                ),
-            )
+            # self.tab.log_event.write_logfile(
+            #     "log_event.txt",
+            #     "Le joueur %d a récupéré la clé %s "
+            #     % (
+            #         self.queue.queue[0].number,
+            #         self.board.cells[new_y][new_x].game_object.key.name,
+            #     ),
+            # )
         self.board.move_or_attack(pawn_selected, new_y, new_x, (pawn_y, pawn_x))
 
     def select_pawn(self, cell: object):
@@ -490,15 +504,17 @@ class GameServer:
             cli.setblocking(blocking)
             try:
                 cli.send(data.encode())
-            except BrokenPipeError:
+            except:
                 log.error("Error ! Client %s : connection lost.", self.read_list.index(cli))
                 for other_cli in self.read_list[1:]:
                     if other_cli is not cli:
+                        other_cli.send(str(-1).encode())
                         other_cli.close()
                         self.read_list.remove(other_cli)
                 self.read_list.remove(cli)
                 self.read_list[0].close()
-            cli.setblocking(False)
+                quit()
+                
         return True
     
     def send_game_state(self,blocking=False):
@@ -585,25 +601,26 @@ class GameServer:
                                     cell.game_object.health + cell.heal_value, 100
                                 )  # maximum 100 HP
                                 if cell.game_object.health != old_health:
-                                    self.tab.log_event.write_logfile(
-                                        "log_event.txt",
-                                        "%s a été soigné de %d HP"
-                                        % (
-                                            cell.game_object.name,
-                                            cell.heal_value,
-                                        ),
-                                    )
-                                if SOUND:
-                                    if cell.game_object.health != old_health:
-                                        heal_sound = pygame.mixer.Sound(
-                                            "sounds/heal.mp3"
-                                        )
-                                        if cell.heal_value >= 10:
-                                            heal_sound.play()
-                                        else:
-                                            heal_sound.set_volume(0.3)
-                                            heal_sound.play()
-                                    # TODO - spawn heart particles
+                                    # self.tab.log_event.write_logfile(
+                                    #     "log_event.txt",
+                                    #     "%s a été soigné de %d HP"
+                                    #     % (
+                                    #         cell.game_object.name,
+                                    #         cell.heal_value,
+                                    #     ),
+                                    # )
+                                    pass
+                                # if SOUND:
+                                #     if cell.game_object.health != old_health:
+                                #         heal_sound = pygame.mixer.Sound(
+                                #             "sounds/heal.mp3"
+                                #         )
+                                #         if cell.heal_value >= 10:
+                                #             heal_sound.play()
+                                #         else:
+                                #             heal_sound.set_volume(0.3)
+                                #             heal_sound.play()
+                                #     # TODO - spawn heart particles
                 continue
                     
                     

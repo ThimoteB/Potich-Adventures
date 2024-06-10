@@ -15,6 +15,8 @@ from .map_object import Tile, AnimatedTile, MapKey, Pawn, Enemy, MapCard
 from .camera import Camera
 from .card import list_of_cards  # pylint: disable=wildcard-import
 from .key import list_of_keys  # pylint: disable=wildcard-import
+from .card import Card
+from .key import Key
 
 log = logging.getLogger(__name__)
 
@@ -388,7 +390,7 @@ class Board(pygame.sprite.Sprite):
                 cell.resize(width, height)
                 
 
-    def _load_from_tmx(self, tmx_file: str, rect: bool = False):
+    def _load_from_tmx(self, tmx_file: str, rect: bool = False, card_map_list:list = [], key_map_list:list = []):
         """This function is used to load the board from a tmx file.
 
         Args:
@@ -461,88 +463,130 @@ class Board(pygame.sprite.Sprite):
                     )
 
         # Get all card spawners
-        card_spawns: dict[int : list[tuple[int, int]]] = defaultdict(list)
-        layer = tmx_data.get_layer_by_name("loot")
-        for x, y, tmx_gid in layer:
-            if tmx_gid != 0:
-                id_card_spawner = tmx_gid
-                card_spawns[tmx_gid].append((x, y))
+        # card_spawns: dict[int : list[tuple[int, int]]] = defaultdict(list)
+        # layer = tmx_data.get_layer_by_name("loot")
+        # for x, y, tmx_gid in layer:
+        #     if tmx_gid != 0:
+        #         id_card_spawner = tmx_gid
+        #         card_spawns[tmx_gid].append((x, y))
 
-        # select randomly one of each
-        selected_card_spawns = {}
-        number_of_card_spawns = len(card_spawns[id_card_spawner])
-        print(list_of_cards)
-        print(card_spawns)
-        for tmx_gid in card_spawns:
-            selected_coordinates = random.sample(
-                card_spawns[tmx_gid], min(len(list_of_cards), number_of_card_spawns)
-            )
-            selected_card_spawns[tmx_gid] = selected_coordinates
-        # add cards to cells
-        unused_cards = list_of_cards.copy()
-        for tmx_gid, coordinates in selected_card_spawns.items():
-            for coordinate in coordinates:
-                # get card image based on the original gid
-                card_random = random.choice(unused_cards)
-                unused_cards.remove(card_random)
-                og_gid = tmx_gids_to_og[tmx_gid]
-                og_gid = og_gid - 10  # valeur en brut en mode balek
-                img_gid = og_gids_to_tmx[og_gid]
+        # # select randomly one of each
+        # selected_card_spawns = {}
+        # number_of_card_spawns = len(card_spawns[id_card_spawner])
+        # print(list_of_cards)
+        # print(card_spawns)
+        # for tmx_gid in card_spawns:
+        #     selected_coordinates = random.sample(
+        #         card_spawns[tmx_gid], min(len(list_of_cards), number_of_card_spawns)
+        #     )
+        #     selected_card_spawns[tmx_gid] = selected_coordinates
+        # # add cards to cells
+        # # TODO: refactor this
+        # unused_cards = list_of_cards.copy()
+        # for tmx_gid, coordinates in selected_card_spawns.items():
+        #     for coordinate in coordinates:
+        #         # get card image based on the original gid
+        #         card_random = random.choice(unused_cards)
+        #         unused_cards.remove(card_random)
+        #         og_gid = tmx_gids_to_og[tmx_gid]
+        #         og_gid = og_gid - 10  # valeur en brut en mode balek
+        #         img_gid = og_gids_to_tmx[og_gid]
 
-                # load animation
-                frames = []
-                frame_durations = []
-                for frame in tmx_data.get_tile_properties_by_gid(img_gid)["frames"]:
-                    frames.append(tmx_data.get_tile_image_by_gid(frame.gid))
-                    frame_durations.append(frame.duration)
+        #         # load animation
+        #         frames = []
+        #         frame_durations = []
+        #         for frame in tmx_data.get_tile_properties_by_gid(img_gid)["frames"]:
+        #             frames.append(tmx_data.get_tile_image_by_gid(frame.gid))
+        #             frame_durations.append(frame.duration)
 
-                card = MapCard(
-                    frames,
-                    frame_durations,
-                    card_random,
-                )
+        #         card = MapCard(
+        #             frames,
+        #             frame_durations,
+        #             card_random,
+        #         )
 
-                card.resize(32, 32)
-                self.cells[coordinate[1]][coordinate[0]].game_object = card
+        #         card.resize(32, 32)
+        #         self.cells[coordinate[1]][coordinate[0]].game_object = card
+
+        for row in self.cells:
+            for cell in row:
+                for card in card_map_list:
+                    if card[1] == cell.y and card[2] == cell.x:
+                        for default_card in list_of_cards:
+                            if card[0] == default_card.name:
+                                tmx_gid = card[3]
+                                new_card:Card = default_card
+                                frames = []
+                                frame_durations = []
+                                og_gid = tmx_gids_to_og[tmx_gid]
+                                og_gid = og_gid - 10  # valeur en brut en mode balek
+                                img_gid = og_gids_to_tmx[og_gid]
+                                for frame in tmx_data.get_tile_properties_by_gid(img_gid)["frames"]:
+                                    frames.append(tmx_data.get_tile_image_by_gid(frame.gid))
+                                    frame_durations.append(frame.duration)
+                                new_map_card = MapCard(frames, frame_durations, new_card)
+                                new_map_card.resize(32,32)
+                                cell.game_object = new_map_card
 
         # resize cells
         for row in self.cells:
             for cell in row:
                 cell.resize(GRAPHICAL_TILE_SIZE, GRAPHICAL_TILE_SIZE)
 
-        # Get all key spawners
-        key_spawns: dict[int : list[tuple[int, int]]] = defaultdict(list)
-        layer = tmx_data.get_layer_by_name("keys")
-        for x, y, tmx_gid in layer:
-            if tmx_gid != 0:
-                key_spawns[tmx_gid].append((x, y))
+        # # Get all key spawners
+        # key_spawns: dict[int : list[tuple[int, int]]] = defaultdict(list)
+        # layer = tmx_data.get_layer_by_name("keys")
+        # for x, y, tmx_gid in layer:
+        #     if tmx_gid != 0:
+        #         key_spawns[tmx_gid].append((x, y))
 
-        # select randomly one of each
-        selected_key_spawns = {}
-        for tmx_gid in key_spawns:
-            selected_key_spawns[tmx_gid] = random.choice(key_spawns[tmx_gid])
+        # # select randomly one of each
+        # selected_key_spawns = {}
+        # for tmx_gid in key_spawns:
+        #     selected_key_spawns[tmx_gid] = random.choice(key_spawns[tmx_gid])
 
-        # add keys to cells
-        list_of_keys_copy = list_of_keys.copy()
-        value = 0
-        for tmx_gid, coordinates in selected_key_spawns.items():
-            # get key image based on the original gid
-            og_gid = tmx_gids_to_og[tmx_gid]
-            og_gid = og_gid - 50  # offset of the sprite sheet (spawner -> key)
-            img_gid = og_gids_to_tmx[og_gid]
+        # # add keys to cells
+        # list_of_keys_copy = list_of_keys.copy()
+        # value = 0
+        # for tmx_gid, coordinates in selected_key_spawns.items():
+        #     # get key image based on the original gid
+        #     og_gid = tmx_gids_to_og[tmx_gid]
+        #     og_gid = og_gid - 50  # offset of the sprite sheet (spawner -> key)
+        #     img_gid = og_gids_to_tmx[og_gid]
 
-            # load animation
-            frames = []
-            frame_durations = []
-            for frame in tmx_data.get_tile_properties_by_gid(img_gid)["frames"]:
-                frames.append(tmx_data.get_tile_image_by_gid(frame.gid))
-                frame_durations.append(frame.duration)
+        #     # load animation
+        #     frames = []
+        #     frame_durations = []
+        #     for frame in tmx_data.get_tile_properties_by_gid(img_gid)["frames"]:
+        #         frames.append(tmx_data.get_tile_image_by_gid(frame.gid))
+        #         frame_durations.append(frame.duration)
 
-            key = MapKey(frames, frame_durations, list_of_keys_copy[value])
-            value += 1
+        #     key = MapKey(frames, frame_durations, list_of_keys_copy[value])
+        #     value += 1
 
-            key.resize(32, 32)
-            self.cells[coordinates[1]][coordinates[0]].game_object = key
+        #     key.resize(32, 32)
+        #     self.cells[coordinates[1]][coordinates[0]].game_object = key
+        
+        for row in self.cells:
+            for cell in row:
+                for key in key_map_list:
+                    if key[1] == cell.y and key[2] == cell.x:
+                        for default_key in list_of_keys:
+                            if key[0] == default_key.name:
+                                tmx_gid = key[3]
+                                new_key:Key = default_key
+                                og_gid = tmx_gids_to_og[tmx_gid]
+                                og_gid = og_gid - 50  # offset of the sprite sheet (spawner -> key)
+                                img_gid = og_gids_to_tmx[og_gid]
+                                frames = []
+                                frame_durations = []
+                                for frame in tmx_data.get_tile_properties_by_gid(img_gid)["frames"]:
+                                    frames.append(tmx_data.get_tile_image_by_gid(frame.gid))
+                                    frame_durations.append(frame.duration)
+                                new_map_key = MapKey(frames, frame_durations, new_key)
+                                new_map_key.resize(32,32)
+                                cell.game_object = new_map_key
+                                
 
         # get the tile props ("heal") for the layer "campfire"
         layer = tmx_data.get_layer_by_name("campfire")
@@ -594,7 +638,7 @@ class Board(pygame.sprite.Sprite):
 
     @classmethod
     def from_tmx(
-        cls, tmx_file: str, camera: tuple[int, int], rect: bool = False
+        cls, tmx_file: str, camera: tuple[int, int], rect: bool = False, card_map_list:list = [], key_map_list:list = []
     ) -> Board:
         """This function is used to create the board from a tmx file.
 
@@ -603,5 +647,5 @@ class Board(pygame.sprite.Sprite):
             camera (object): represents the camera
         """
         board = cls(0, 0, 0, 0, camera)
-        board._load_from_tmx(tmx_file, rect)
+        board._load_from_tmx(tmx_file, rect, card_map_list, key_map_list)
         return board

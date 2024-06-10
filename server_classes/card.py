@@ -57,7 +57,7 @@ class Card(pygame.sprite.Sprite):  # pylint: disable=too-few-public-methods
 
 card_slot_width = 150
 card_slot_height = 220
-list_of_cards = []
+list_of_cards:list[Card] = []
 card_croix = Card(
     "images/croix.png", card_slot_width, card_slot_height, move_croix, "Croix"
 )

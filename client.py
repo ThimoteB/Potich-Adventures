@@ -50,7 +50,8 @@ class Client:
         self.clock = pygame.time.Clock()
         self.camera = self.init_camera(self.data_in["map"])
         self.camera.set_bounds(self.screen.get_width(), self.screen.get_height())
-        self.board = Board.from_tmx("maps/" + self.map_chosen, self.camera, False)
+        self.board = Board.from_tmx("maps/" + self.map_chosen, self.camera, False, self.data_in["card_map_list"], self.data_in["key_map_list"])
+        # TODO: edit board class to load cards and keys
         self.board.resize_tiles(GRAPHICAL_TILE_SIZE, GRAPHICAL_TILE_SIZE)
         self.tab = Tab(self.screen, 50, self.screen.get_height(), 50)
         self.tab.game_info.current_player = "Joueur " + str(self.player_number)
@@ -350,6 +351,15 @@ class Client:
                 if c.get_name == card:
                     self.group_slots_card[i].add_item(c)
                     break
+    
+    def update_keys(self):
+        for i in range(4):
+            self.group_slots_key[i].reset_item()
+        for i, key in enumerate(self.data_in["keys"]):
+            for k in list_of_keys:
+                if k.name == key[0]:
+                    self.group_slots_key[i].add_item(k)
+                    break
 
     def init_key_slots(self):
         """This function is used to initialize the key slots."""
@@ -537,6 +547,7 @@ class Client:
             
             # Update cards
             self.update_cards()
+            self.update_keys()
             
             # Managements of the frames
             self.clock.tick(TICK_RATE)

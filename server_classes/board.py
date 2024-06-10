@@ -16,6 +16,7 @@ from .map_object import Tile, MapKey, Pawn, Enemy, MapCard
 from .camera import Camera
 from .card import list_of_cards  # pylint: disable=wildcard-import
 from .key import list_of_keys  # pylint: disable=wildcard-import
+from .card import Card
 
 log = logging.getLogger(__name__)
 
@@ -394,6 +395,12 @@ class Board(pygame.sprite.Sprite):
         Args:
             tmx_file (str): represents the tmx file
         """
+        self.item_spawn:dict[str: list[list[str, int, int, int]], 
+                        str: list[list[str, int, int, int]]
+                        ] = {
+            "card_map_list": [],
+            "key_map_list": []
+        }
 
         tmx_data = pytmx.TiledMap(tmx_file)
         tmx_gids_to_og = tmx_data.tiledgidmap
@@ -459,7 +466,7 @@ class Board(pygame.sprite.Sprite):
                             # tmx_data.get_tile_image_by_gid(gid),
                         )
                     )
-
+                    
         # Get all card spawners
         card_spawns: dict[int : list[tuple[int, int]]] = defaultdict(list)
         layer = tmx_data.get_layer_by_name("loot")
@@ -471,8 +478,6 @@ class Board(pygame.sprite.Sprite):
         # select randomly one of each
         selected_card_spawns = {}
         number_of_card_spawns = len(card_spawns[id_card_spawner])
-        print(list_of_cards)
-        print(card_spawns)
         for tmx_gid in card_spawns:
             selected_coordinates = random.sample(
                 card_spawns[tmx_gid], min(len(list_of_cards), number_of_card_spawns)
@@ -499,14 +504,11 @@ class Board(pygame.sprite.Sprite):
                 card = MapCard(
                     card_random,
                 )
+                
 
                 # card.resize(32, 32)
                 self.cells[coordinate[1]][coordinate[0]].game_object = card
-
-        # resize cells
-        # for row in self.cells:
-        #     for cell in row:
-        #         cell.resize(GRAPHICAL_TILE_SIZE, GRAPHICAL_TILE_SIZE)
+                self.item_spawn["card_map_list"].append([card.card.name, coordinate[1], coordinate[0], tmx_gid])
 
         # Get all key spawners
         key_spawns: dict[int : list[tuple[int, int]]] = defaultdict(list)
@@ -541,6 +543,7 @@ class Board(pygame.sprite.Sprite):
 
             # key.resize(32, 32)
             self.cells[coordinates[1]][coordinates[0]].game_object = key
+            self.item_spawn["key_map_list"].append([key.key.name, coordinates[1], coordinates[0], tmx_gid])
 
         # get the tile props ("heal") for the layer "campfire"
         layer = tmx_data.get_layer_by_name("campfire")
@@ -555,6 +558,12 @@ class Board(pygame.sprite.Sprite):
         # for row in self.cells:
         #     for cell in row:
         #         cell.resize(GRAPHICAL_TILE_SIZE, GRAPHICAL_TILE_SIZE)
+    
+    def get_item_spawn(self) -> dict[str: list[list[str, int, int]], 
+                                    str: list[list[str, int, int]]
+                                    ]:
+        """This function is used to get the item spawn."""
+        return self.item_spawn
         
     def get_all_elements(self) -> list[list[str, int, int, int]]:
         """This function is used to get all the elements on the board.

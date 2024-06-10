@@ -51,7 +51,6 @@ class Slot:
         """
         if self.is_empty():
             self.item = item
-            item.rect.topleft = self.rect.topleft
 
     def reset_item(self):
         """This function is used to reset the item in the slot."""
