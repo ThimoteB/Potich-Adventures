@@ -1,5 +1,8 @@
+"""Main client entry point"""
+
 import logging
-import multiprocessing as mp
+import socket
+import json
 
 import pygame
 from rich.logging import RichHandler
@@ -15,10 +18,7 @@ from classes import (
 )
 from game import Game
 from client import Client
-
-import socket, json
-
-from game_constants.consts import PORT, HOST
+from game_constants.consts import PORT
 
 # program-wide logging formatter
 root_logger = logging.getLogger()
@@ -34,6 +34,8 @@ log = logging.getLogger(__name__)
 
 
 class Main:
+    """Main class for the game"""
+
     def __init__(self) -> None:
         pygame.init()  # pylint: disable=no-member
         pygame.font.init()
@@ -62,6 +64,7 @@ class Main:
         self.players = []
 
     def draw_options(self, options, do_not_clear=False, manual_offset=0):
+        """Draw the options on the screen"""
         if not do_not_clear:
             self.screen.fill(self.black)
         self.hitboxes = []
@@ -83,7 +86,8 @@ class Main:
             self.screen.blit(text, text_rect)
             pygame.draw.rect(self.screen, (255, 0, 0), option_hitbox, 2)
 
-    def draw_input(self, input):
+    def draw_input(self, kb_inut):
+        """Draw an input box on the screen"""
         screen_width, screen_height = self.screen.get_size()
         total_height = 2 * 70
         y = (screen_height - total_height) // 2
@@ -101,15 +105,15 @@ class Main:
         text = ""
         active = False
 
-        sample_text = self.font.render(input, True, self.white)
+        sample_text = self.font.render(kb_inut, True, self.white)
         sample_rect = sample_text.get_rect(center=(screen_width // 2, y))
 
         done: bool = False
         while not done:
             for event in pygame.event.get():
-                if event.type == pygame.QUIT:
+                if event.type == pygame.constants.QUIT:
                     done = True
-                if event.type == pygame.MOUSEBUTTONDOWN:
+                if event.type == pygame.constants.MOUSEBUTTONDOWN:
                     # If the user clicked on the input_box rect.
                     if input_box.collidepoint(event.pos):
                         # Toggle the active variable.
@@ -118,8 +122,8 @@ class Main:
                         active = False
                     # Change the current color of the input box.
                     color = color_active if active else color_inactive
-                if event.type == pygame.KEYDOWN:
-                    if event.key == pygame.K_ESCAPE:
+                if event.type == pygame.constants.KEYDOWN:
+                    if event.key == pygame.constants.K_ESCAPE:
                         return
                     if active:
                         if event.key == pygame.K_RETURN:
@@ -145,15 +149,18 @@ class Main:
             self.clock.tick(30)
 
     def remove_all_hitboxes(self):
+        """Remove all hitboxes from the screen"""
         self.hitboxes = []
 
     def on_click(self, mouse_pos):
+        """Check if the mouse is clicking on an option"""
         for i, hitbox in enumerate(self.hitboxes):
             if hitbox.collidepoint(mouse_pos):
                 return i
         return -1
 
     def on_click_player(self, mouse_pos):
+        """Check if the mouse is clicking on a player count"""
         for i, hitbox in enumerate(self.hitboxes):
             if hitbox.collidepoint(mouse_pos):
                 self.player_count = i + 1
@@ -161,6 +168,7 @@ class Main:
         return False
 
     def run(self):
+        """Main game loop"""
         running = True
         tutorial_page = RulePage(self.screen)
         credits_page = CreditsPage(self.screen)
@@ -324,9 +332,9 @@ class Main:
                     self.players = []
                     for player in data["players"]:
                         self.players.append((player[0], player[1]))
-                    if data["start"] == True:
+                    if data["start"]:
                         self.current_state = "Start"
-                except:
+                except BlockingIOError:
                     pass
                 self.sock.setblocking(True)
                 lobby_page.draw(self.players)
