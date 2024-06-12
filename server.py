@@ -1,13 +1,16 @@
+"""This module is the main server module. It is used to start the server and wait for client 
+connection in order to start the game."""
+
+import logging
 import socket
 import select
 import json
-import multiprocessing as mp
-from time import sleep
+import argparse
+
+from rich.logging import RichHandler
+
 from game_server import GameServer
 from game_constants.consts import HOST, PORT
-import logging
-from rich.logging import RichHandler
-import argparse
 
 # program-wide logging formatter
 root_logger = logging.getLogger()
@@ -29,6 +32,8 @@ args = parser.parse_args()
 
 
 class Server(object):
+    """This class handles the connections from the client. It doesn't handle the game logic."""
+
     def __init__(self, max_players: int = 2) -> None:
         # server data
         self.hostname = HOST
@@ -41,14 +46,14 @@ class Server(object):
         self.start_status: bool = False
         self.pre_game_data: dict = {"players": [], "start": False}
 
-    def broadcast(self, input: dict) -> bool:
+    def broadcast(self, message: dict) -> bool:
         """This method allow to broadcast data to every players in the read list
 
         Args:
             data (dict): a dict of data to be sent
         """
-        log.debug("Broadcasting : %s", input)
-        data = json.dumps(input)
+        log.debug("Broadcasting : %s", message)
+        data = json.dumps(message)
         for cli in self.read_list[1:]:
             cli.send(data.encode())
         return True
@@ -61,6 +66,7 @@ class Server(object):
             self.pre_game_data["players"].append(cli.getpeername())
 
     def update_start_status(self) -> None:
+        """Update the start status of the game"""
         if len(self.read_list[1:]) == self.max_players:
             self.pre_game_data["start"] = True
             self.start_status = True
@@ -68,7 +74,8 @@ class Server(object):
             log.info("Starting the game with %s players", len(self.read_list) - 1)
 
     def start(self) -> list[socket.socket]:
-        """This method is used to start the game server and wait for client connection in order to start the game"""
+        """This method is used to start the game server and wait for client connection
+        in order to start the game"""
         server_socket: socket.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         server_socket.bind((HOST, PORT))
@@ -80,7 +87,7 @@ class Server(object):
         while not self.start_status:
             # wait for client response/connexion
             # select : wait until something is happening in a descriptor (server or client socket)
-            readable, writable, errored = select.select(self.read_list, [], [])
+            readable, _, _ = select.select(self.read_list, [], [])
             for s in readable:  # for each socket (server/client)
                 if s is server_socket:  # manage server socket
                     client_socket, address = server_socket.accept()

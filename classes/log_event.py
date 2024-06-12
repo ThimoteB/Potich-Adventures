@@ -1,4 +1,5 @@
 """ This module is used to create the log_event."""
+
 import pygame
 
 
@@ -27,7 +28,12 @@ class LogEvent(pygame.sprite.Sprite):
         self.reset_logfile("log_event.txt")
 
     def read_logfile(self, log_file: str):
-        with open(log_file, "r") as file:
+        """Read the log file.
+
+        Args:
+            log_file (str): represents the path of the log file
+        """
+        with open(log_file, "r", encoding="utf-8") as file:
             lines = file.readlines()
 
             if lines:
@@ -39,7 +45,13 @@ class LogEvent(pygame.sprite.Sprite):
             self.list_log = [line.rstrip("\n") for line in lines[1:]]
 
     def write_logfile(self, log_file: str, text: str):
-        with open(log_file, "r+") as file:
+        """Write the text in the log file.
+
+        Args:
+            log_file (str): represents the path of the log file
+            text (str): represents the text to write in the log file
+        """
+        with open(log_file, "r+", encoding="utf-8") as file:
             lines = file.readlines()
 
             if lines:
@@ -68,7 +80,7 @@ class LogEvent(pygame.sprite.Sprite):
         Args:
             log_file (str): represents the path of the log file
         """
-        with open(log_file, "w") as file:
+        with open(log_file, "w", encoding="utf-8") as file:
             file.write("0")
 
     def draw_text(self, screen: pygame.surface):

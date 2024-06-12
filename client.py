@@ -1,20 +1,24 @@
 """ File containing the main loop of the game """
 
-from queue import Queue
-from time import sleep
+import json
 import logging
-import pygame  # pylint: disable=import-error
-import socket, json
+import socket
+from time import sleep
 
-from game_constants.consts import TICK_RATE, GRAPHICAL_TILE_SIZE, SOUND
-from classes import Tab, Board, Player, Card, Key, Camera, Pawn, Enemy, EndTurn
-from classes.map_object import MapCard, MapKey
-from moves import *  # Import all the moves # pylint: disable=unused-wildcard-import,wildcard-import
+import pygame  # pylint: disable=import-error
+
+from classes import Board, Camera, Card, Enemy, Key, Pawn, Tab
 from classes.card import *  # pylint: disable=unused-wildcard-import,wildcard-import
 from classes.key import *  # pylint: disable=unused-wildcard-import,wildcard-import
-
+from classes.map_object import MapCard, MapKey
+from game_constants.consts import GRAPHICAL_TILE_SIZE, TICK_RATE
+from moves import *  # Import all the moves # pylint: disable=unused-wildcard-import,wildcard-import
 
 log = logging.getLogger(__name__)
+
+# Parce que on a défini une globale en dessous :)
+card_selected: Card = None
+highlighted_cells: list = []
 
 
 class Client:
@@ -65,6 +69,7 @@ class Client:
         self.fog = fog
         self.load_fog_image()
         self.init_fog_cells()
+        self.highlighted_cells = []
 
     def send_data(self) -> bool:
         """This method send the data in the slef.data attribute to the server
@@ -77,11 +82,8 @@ class Client:
             self.sock.sendall(data.encode())
             log.debug("Sent: %s", data)
             return True
-        except:
+        except BlockingIOError:
             return False
-
-    def reset_data(self):
-        pass
 
     def recv_data(self, blocking=False) -> bool:
         """This method receive data from the server and store it in the self.data_in attribute
@@ -303,6 +305,7 @@ class Client:
 
     def init_cards_slots(self):
         """This function is used to initialize the cards slots."""
+        # pylint: disable=attribute-defined-outside-init
         self.group_slots_card = [
             self.tab.top_left_slot,
             self.tab.top_right_slot,
@@ -347,7 +350,10 @@ class Client:
                     self.group_slots_card[i].add_item(c)
                     break
 
+        # pylint: enable=attribute-defined-outside-init
+
     def update_cards(self):
+        """This function is used to update the cards."""
         for i in range(4):
             self.group_slots_card[i].reset_item()
         for i, card in enumerate(self.data_in["cards"]):
@@ -357,6 +363,7 @@ class Client:
                     break
 
     def update_keys(self):
+        """This function is used to update the keys."""
         for i in range(4):
             self.group_slots_key[i].reset_item()
         for i, key in enumerate(self.data_in["keys"]):
@@ -367,12 +374,14 @@ class Client:
 
     def init_key_slots(self):
         """This function is used to initialize the key slots."""
+        # pylint: disable=attribute-defined-outside-init
         self.group_slots_key = [
             self.tab.first_key_slot,
             self.tab.second_key_slot,
             self.tab.third_key_slot,
             self.tab.fourth_key_slot,
         ]
+        # pylint: enable=attribute-defined-outside-init
 
     def add_key_slot(self, key: Key):
         """This function is used to add a key slot.
@@ -517,7 +526,15 @@ class Client:
                 if cell.game_object == pawn:
                     return cell.y, cell.x
 
-    def handle_card_selection(self, index: int):
+    def handle_card_selection(self, index: int) -> Card:
+        """This function is used to handle the card selection.
+
+        Args:
+            index (int): index of the card
+
+        Returns:
+            Card: card object
+        """
         global card_selected, highlighted_cells
         previous_card_selected = self.card_selected
         card_selected = self.tab.handle_click_shortcut_cards(index)
@@ -679,20 +696,21 @@ class Client:
             pygame.display.flip()
 
 
-if __name__ == "__main__":
-    from rich.logging import RichHandler
+# if __name__ == "__main__":
+#     # Can be used to test a single client connection
+#     from rich.logging import RichHandler
 
-    root_logger = logging.getLogger()
-    handler = RichHandler()
-    root_logger.addHandler(handler)
-    root_logger.setLevel(logging.DEBUG)
-    root_logger.propagate = False
-    log = logging.getLogger(__name__)
+#     root_logger = logging.getLogger()
+#     handler = RichHandler()
+#     root_logger.addHandler(handler)
+#     root_logger.setLevel(logging.DEBUG)
+#     root_logger.propagate = False
+#     log = logging.getLogger(__name__)
 
-    sock: socket.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    sock.connect_ex(("127.0.0.1", 44440))
-    log.debug(sock.recv(1024).decode())
+#     sock: socket.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+#     sock.connect_ex(("127.0.0.1", 44440))
+#     log.debug(sock.recv(1024).decode())
 
-    game = Client(sock)
-    game.run()
-    pygame.quit()
+#     game = Client(sock)
+#     game.run()
+#     pygame.quit()
