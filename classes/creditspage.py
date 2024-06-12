@@ -1,4 +1,5 @@
 """ Page for the credits of the game """
+
 import pygame
 
 
@@ -19,6 +20,9 @@ class CreditsPage:
             "Développeur",
             "Artiste",
             "Game Designer",
+            "----------",
+            "Lasagne Celian:",
+            "Network Engineer",
             "----------",
             "analogStudios_:",
             "Tileset designer",
