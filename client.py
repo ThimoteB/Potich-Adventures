@@ -22,26 +22,26 @@ class Client:
     This class is used to create the main loop of the game.
     """
 
-    def __init__(self, sock:socket.socket, fog=False):
-        self.sock:socket.socket = sock
+    def __init__(self, sock: socket.socket, fog=False):
+        self.sock: socket.socket = sock
         self.sock.setblocking(False)
-        self.data_out:dict = {
+        self.data_out: dict = {
             "skip": False,
-            "selected_card": None, # assigned with the card_selected variable in the main loop
-            "selected_cell": [None, None]
+            "selected_card": None,  # assigned with the card_selected variable in the main loop
+            "selected_cell": [None, None],
         }
-        self.data_in:dict = {}
+        self.data_in: dict = {}
         """Data received from the server"""
-        
+
         pygame.init()  # pylint: disable=no-member
-        
+
         self.recv_data(blocking=True)
         self.player_number = self.data_in["player_number"]
-        
+
         self.player_count = self.data_in["player_count"]
         self.map_chosen = self.data_in["map"]
         log.debug("Map chosen: %s", self.map_chosen)
-        
+
         # self.screen = pygame.display.set_mode(flags=pygame.FULLSCREEN)  # pylint: disable=no-member
         self.screen = pygame.display.set_mode((1600, 900))  # pylint: disable=no-member
         self.rect_fullscreen = pygame.Rect(
@@ -50,7 +50,13 @@ class Client:
         self.clock = pygame.time.Clock()
         self.camera = self.init_camera(self.data_in["map"])
         self.camera.set_bounds(self.screen.get_width(), self.screen.get_height())
-        self.board = Board.from_tmx("maps/" + self.map_chosen, self.camera, False, self.data_in["card_map_list"], self.data_in["key_map_list"])
+        self.board = Board.from_tmx(
+            "maps/" + self.map_chosen,
+            self.camera,
+            False,
+            self.data_in["card_map_list"],
+            self.data_in["key_map_list"],
+        )
         # TODO: edit board class to load cards and keys
         self.board.resize_tiles(GRAPHICAL_TILE_SIZE, GRAPHICAL_TILE_SIZE)
         self.tab = Tab(self.screen, 50, self.screen.get_height(), 50)
@@ -59,7 +65,7 @@ class Client:
         self.fog = fog
         self.load_fog_image()
         self.init_fog_cells()
-    
+
     def send_data(self) -> bool:
         """This method send the data in the slef.data attribute to the server
 
@@ -67,16 +73,16 @@ class Client:
             bool: False if the send fail
         """
         try:
-            data:str = json.dumps(self.data_out)
+            data: str = json.dumps(self.data_out)
             self.sock.sendall(data.encode())
             log.debug("Sent: %s", data)
             return True
         except:
             return False
-    
+
     def reset_data(self):
         pass
-    
+
     def recv_data(self, blocking=False) -> bool:
         """This method receive data from the server and store it in the self.data_in attribute
 
@@ -85,7 +91,7 @@ class Client:
         """
         self.sock.setblocking(blocking)
         try:
-            data:bytes = self.sock.recv(1024)
+            data: bytes = self.sock.recv(1024)
             if not data:
                 return False
             self.data_in = json.loads(data.decode())
@@ -94,7 +100,6 @@ class Client:
             return True
         except BlockingIOError:
             return False
-        
 
     def end_game(self):
         """
@@ -196,7 +201,7 @@ class Client:
         Args:
             mapchoose (str): map chosen by the player
         """
-        
+
         self.list_pawns = []
         self.list_enemies = []
         self.pawn1 = Pawn(
@@ -296,7 +301,6 @@ class Client:
         self.card_selected = None
         self.pawn_selected = None
 
-    
     def init_cards_slots(self):
         """This function is used to initialize the cards slots."""
         self.group_slots_card = [
@@ -305,22 +309,22 @@ class Client:
             self.tab.bottom_left_slot,
             self.tab.bottom_right_slot,
         ]
-        self.card_croix:Card = card_croix
-        self.card_lightning:Card = card_lightning
-        self.card_horloge:Card = card_horloge
-        self.card_fontaine:Card = card_fontaine
-        self.card_plume:Card = card_plume
-        self.card_up_1:Card = card_up_1
-        self.card_up_2:Card = card_up_2
-        self.card_down_1:Card = card_down_1
-        self.card_down_2:Card = card_down_2
-        self.card_left_1:Card = card_left_1
-        self.card_left_2:Card = card_left_2
-        self.card_right_1:Card = card_right_1
-        self.card_right_2:Card = card_right_2
-        self.card_supreme:Card = card_supreme
-        
-        self.card_list:list[Card] = [
+        self.card_croix: Card = card_croix
+        self.card_lightning: Card = card_lightning
+        self.card_horloge: Card = card_horloge
+        self.card_fontaine: Card = card_fontaine
+        self.card_plume: Card = card_plume
+        self.card_up_1: Card = card_up_1
+        self.card_up_2: Card = card_up_2
+        self.card_down_1: Card = card_down_1
+        self.card_down_2: Card = card_down_2
+        self.card_left_1: Card = card_left_1
+        self.card_left_2: Card = card_left_2
+        self.card_right_1: Card = card_right_1
+        self.card_right_2: Card = card_right_2
+        self.card_supreme: Card = card_supreme
+
+        self.card_list: list[Card] = [
             card_croix,
             card_lightning,
             card_horloge,
@@ -334,15 +338,15 @@ class Client:
             card_left_2,
             card_right_1,
             card_right_2,
-            card_supreme
+            card_supreme,
         ]
-        
+
         for i, card in enumerate(self.data_in["cards"]):
             for c in self.card_list:
                 if c.get_name == card:
                     self.group_slots_card[i].add_item(c)
                     break
-    
+
     def update_cards(self):
         for i in range(4):
             self.group_slots_card[i].reset_item()
@@ -351,7 +355,7 @@ class Client:
                 if c.get_name == card:
                     self.group_slots_card[i].add_item(c)
                     break
-    
+
     def update_keys(self):
         for i in range(4):
             self.group_slots_key[i].reset_item()
@@ -534,21 +538,23 @@ class Client:
 
         # Initialize variables
         frame_id = 0
-        card_selected:Card = None
+        card_selected: Card = None
         pawn_selected = None
         highlighted_cells = []
 
         # Main loop
         while True:
             self.recv_data()
-            
+
             # Update the map
-            self.board.update_elements(self.data_in["elements"], self.data_in["possible_moves"])
-            
+            self.board.update_elements(
+                self.data_in["elements"], self.data_in["possible_moves"]
+            )
+
             # Update cards
             self.update_cards()
             self.update_keys()
-            
+
             # Managements of the frames
             self.clock.tick(TICK_RATE)
             frame_id += 1
@@ -573,6 +579,14 @@ class Client:
                 self.end_game()
                 break
 
+            if self.data_in["current_player"] == self.player_number:
+                self.tab.game_info.current_player = "C'est votre tour"
+
+            else:
+                self.tab.game_info.current_player = (
+                    f" Tour du joueur {self.data_in['current_player'] + 1} "
+                )
+
             for event in pygame.event.get():
                 # TODO: client side event management
                 if event.type == pygame.QUIT:  # pylint: disable=no-member
@@ -581,7 +595,7 @@ class Client:
                 elif pygame.key.get_pressed()[pygame.K_TAB]:
                     self.tab.gray_zone.black_open = not self.tab.gray_zone.black_open
                     self.tab.toggle_expand()
-                
+
                 elif event.type == pygame.KEYDOWN:
                     # action only if the current player is the client
                     if self.data_in["current_player"] == self.player_number:
@@ -616,7 +630,7 @@ class Client:
                     # Open or close the tab
                     if self.tab.gray_zone.on_click(pygame.mouse.get_pos()):
                         self.tab.handle_input(pygame.mouse.get_pos())
-                    
+
                     # Check if the click is on the black zone ( for not clicking on the cell behind)
                     # Detect if a card is selected or unselected
                     elif self.tab.black_zone.on_click(pygame.mouse.get_pos()):
@@ -625,7 +639,9 @@ class Client:
                             self.data_out["selected_cell"] = [None, None]
                             log.debug("Mouse click at %s", pygame.mouse.get_pos())
                             previous_card_selected = card_selected
-                            card_selected = self.tab.handle_click(pygame.mouse.get_pos())
+                            card_selected = self.tab.handle_click(
+                                pygame.mouse.get_pos()
+                            )
                             # Check if the same card is re-selected
                             if card_selected == previous_card_selected:
                                 highlighted_cells = []
@@ -640,7 +656,7 @@ class Client:
                                 log.debug("Selected card: %s", card_selected.name)
                                 self.unhilight()
                                 highlighted_cells = []
-                            
+
                                 # send the card
                                 self.data_out["selected_card"] = card_selected.name
                                 self.send_data()
@@ -651,9 +667,12 @@ class Client:
                         if self.data_in["current_player"] == self.player_number:
                             clicked_cell = self.clicked_cell(pygame.mouse.get_pos())
                             log.debug("Clicked cell: %s", clicked_cell)
-                            self.data_out["selected_cell"] = [clicked_cell.y, clicked_cell.x]
+                            self.data_out["selected_cell"] = [
+                                clicked_cell.y,
+                                clicked_cell.x,
+                            ]
                             self.send_data()
-                            
+
             # Handle camera movement
             self.handle_input_cam()
 
@@ -662,15 +681,16 @@ class Client:
 
 if __name__ == "__main__":
     from rich.logging import RichHandler
+
     root_logger = logging.getLogger()
     handler = RichHandler()
     root_logger.addHandler(handler)
     root_logger.setLevel(logging.DEBUG)
     root_logger.propagate = False
     log = logging.getLogger(__name__)
-    
-    sock:socket.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    sock.connect_ex(("127.0.0.1",44440))
+
+    sock: socket.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    sock.connect_ex(("127.0.0.1", 44440))
     log.debug(sock.recv(1024).decode())
 
     game = Client(sock)
