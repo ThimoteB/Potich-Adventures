@@ -1,16 +1,37 @@
 """ File containing the main loop of the game """
 
+import logging
 from queue import Queue
 from time import sleep
-import logging
+
 import pygame  # pylint: disable=import-error
 
-from game_constants.consts import TICK_RATE, GRAPHICAL_TILE_SIZE, SOUND
-from classes import Tab, Board, Player, Card, Key, Camera, Pawn, Enemy, EndTurn
+from classes import Board, Camera, Card, EndTurn, Enemy, Key, Pawn, Player, Tab
+from classes.card import (
+    card_croix,
+    card_down_1,
+    card_down_2,
+    card_fontaine,
+    card_horloge,
+    card_left_1,
+    card_left_2,
+    card_lightning,
+    card_plume,
+    card_right_1,
+    card_right_2,
+    card_supreme,
+    card_up_1,
+    card_up_2,
+)
 from classes.map_object import MapCard, MapKey
-from moves import *  # Import all the moves # pylint: disable=unused-wildcard-import,wildcard-import
-from classes.card import *  # pylint: disable=unused-wildcard-import,wildcard-import
-from classes.key import *  # pylint: disable=unused-wildcard-import,wildcard-import
+from game_constants.consts import GRAPHICAL_TILE_SIZE, SOUND, TICK_RATE
+
+# from classes.key import (
+#     key_red,
+#     key_green,
+#     key_blue,
+#     key_yellow,
+# )
 
 
 log = logging.getLogger(__name__)
@@ -41,7 +62,10 @@ class Game:
         self.init_game_elements(mapchoose)
         self.fog = fog
         self.load_fog_image()
-        self.init_fog_cells()
+
+        # Fog cells
+        self.list_fog_cases = [cell for row in self.board.cells for cell in row]
+        self.fog_range = 3
 
     def end_game(self):
         """
@@ -66,13 +90,6 @@ class Game:
         self.fog_image = pygame.transform.scale(
             self.fog_image, (GRAPHICAL_TILE_SIZE, GRAPHICAL_TILE_SIZE)
         )
-
-    def init_fog_cells(self):
-        """
-        This function is used to initialize the fog cells.
-        """
-        self.list_fog_cases = [cell for row in self.board.cells for cell in row]
-        self.fog_range = 3
 
     def remove_fog(self, cell: list):
         """This function is used to remove the fog.
@@ -252,13 +269,7 @@ class Game:
             self.queue.put(self.enemy4)
         self.queue.put(EndTurn())
 
-        self.init_cards_slots()
-        self.init_key_slots()
-        self.card_selected = None
-        self.pawn_selected = None
-
-    def init_cards_slots(self):
-        """This function is used to initialize the cards slots."""
+        # Card slot init
         self.group_slots_card = [
             self.tab.top_left_slot,
             self.tab.top_right_slot,
@@ -305,14 +316,16 @@ class Game:
                 self.queue.queue[2].add_card(self.card_left_1)
                 self.queue.queue[3].add_card(self.card_right_1)
 
-    def init_key_slots(self):
-        """This function is used to initialize the key slots."""
+        # Key slot init
         self.group_slots_key = [
             self.tab.first_key_slot,
             self.tab.second_key_slot,
             self.tab.third_key_slot,
             self.tab.fourth_key_slot,
         ]
+
+        self.card_selected = None
+        self.pawn_selected = None
 
     def swap_card(self, queue: Queue):
         """This function is used to swap the cards depending on the player.
@@ -395,20 +408,14 @@ class Game:
                 # ex : Le joueur 1 a récupéré la carte croix
                 self.tab.log_event.write_logfile(
                     "log_event.txt",
-                    "Le joueur %d a récupéré la carte %s "
-                    % (
-                        self.queue.queue[0].number,
-                        self.board.cells[new_y][new_x].game_object.card.name,
-                    ),
+                    f"Le joueur {self.queue.queue[0].number} a récupéré la carte\
+                        {self.board.cells[new_y][new_x].game_object.card.name}",
                 )
             else:
                 self.tab.log_event.write_logfile(
                     "log_event.txt",
-                    "Le joueur %d a déchiré la carte %s "
-                    % (
-                        self.queue.queue[0].number,
-                        self.board.cells[new_y][new_x].game_object.card.name,
-                    ),
+                    f"Le joueur {self.queue.queue[0].number} a déchiré la carte\
+                        {self.board.cells[new_y][new_x].game_object.card.name} ",
                 )
 
         log.debug(isinstance(self.board.cells[new_y][new_x].game_object, MapKey or Key))
@@ -417,11 +424,8 @@ class Game:
             # ex : Le joueur 1 a récupéré la clé rouge
             self.tab.log_event.write_logfile(
                 "log_event.txt",
-                "Le joueur %d a récupéré la clé %s "
-                % (
-                    self.queue.queue[0].number,
-                    self.board.cells[new_y][new_x].game_object.key.name,
-                ),
+                f"Le joueur {self.queue.queue[0].number} a récupéré\
+                    la clé {self.board.cells[new_y][new_x].game_object.key.name} ",
             )
         self.board.move_or_attack(pawn_selected, new_y, new_x, (pawn_y, pawn_x))
 
@@ -483,6 +487,11 @@ class Game:
                     return cell.y, cell.x
 
     def handle_card_selection(self, index: int):
+        """Handles the backend selection of a move Card.
+
+        Args:
+            index (int): index of the card
+        """
         global card_selected, highlighted_cells
         previous_card_selected = self.card_selected
         card_selected = self.tab.handle_click_shortcut_cards(index)
@@ -563,11 +572,7 @@ class Game:
                                 if cell.game_object.health != old_health:
                                     self.tab.log_event.write_logfile(
                                         "log_event.txt",
-                                        "%s a été soigné de %d HP"
-                                        % (
-                                            cell.game_object.name,
-                                            cell.heal_value,
-                                        ),
+                                        f"{cell.game_object.name} a été soigné de {cell.heal_value} HP",
                                     )
                                 if SOUND:
                                     if cell.game_object.health != old_health:
