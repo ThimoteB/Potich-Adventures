@@ -21,7 +21,7 @@ class CreditsPage:
             "Artiste",
             "Game Designer",
             "----------",
-            "Lasagne Celian:",
+            "Lasagne Célian:",
             "Network Engineer",
             "----------",
         ]
