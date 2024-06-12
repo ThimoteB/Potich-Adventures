@@ -24,13 +24,6 @@ class CreditsPage:
             "Lasagne Celian:",
             "Network Engineer",
             "----------",
-            "analogStudios_:",
-            "Tileset designer",
-            "----------",
-            "rawpixel on Freepick",
-            "Fog texture",
-            "----------",
-            "Orange Cat By NoelaniEternal",
         ]
 
     def draw(self):
