@@ -2,17 +2,34 @@
 
 import json
 from queue import Queue
-from time import sleep
 import logging
-import pygame  # pylint: disable=import-error
-import socket, select
+import socket
+import select
 
-from game_constants.consts import TICK_RATE, GRAPHICAL_TILE_SIZE, SOUND
+import pygame  # pylint: disable=import-error
+
+from game_constants.consts import GRAPHICAL_TILE_SIZE
 from server_classes import Tab, Board, Player, Card, Key, Camera, Pawn, Enemy, EndTurn
 from server_classes.map_object import MapCard, MapKey
-from moves import *  # Import all the moves # pylint: disable=unused-wildcard-import,wildcard-import
-from server_classes.card import *  # pylint: disable=unused-wildcard-import,wildcard-import
-from server_classes.key import *  # pylint: disable=unused-wildcard-import,wildcard-import
+
+from server_classes.card import (
+    card_right_1,
+    card_right_2,
+    card_left_1,
+    card_left_2,
+    card_down_1,
+    card_down_2,
+    card_up_1,
+    card_up_2,
+    card_supreme,
+    card_croix,
+    card_lightning,
+    card_horloge,
+    card_fontaine,
+    card_plume,
+)
+
+# from server_classes.key import *
 
 log = logging.getLogger(__name__)
 
@@ -22,11 +39,11 @@ class GameServer:
     This class is used to create the main loop of the game.
     """
 
-    def __init__(self, read_list, player_count=-1, mapchoose="map2.tmx", fog=False):
-        self.read_list:list[socket.socket] = read_list
-        self.read_list[0].setblocking(True)
+    def __init__(self, read_list, mapchoose="map2.tmx", fog=False):
         """Sockets list -> first socket is the server socket, the others are client sockets"""
-        self.data:dict = {
+        self.read_list: list[socket.socket] = read_list
+        self.read_list[0].setblocking(True)
+        self.data: dict = {
             "player_count": len(self.read_list[1:]),
             "current_player": -1,
             "map": None,
@@ -38,17 +55,14 @@ class GameServer:
             "card_map_list": [],
             "key_map_list": [],
         }
-        self.players:list[dict,dict,dict,dict] = [{},{},{},{}]
+        self.players: list[dict, dict, dict, dict] = [{}, {}, {}, {}]
         for pl in self.players:
-            pl.update({
-                "skip": False,
-                "selected_card": None,
-                "selected_cell": [None, None]
-            })
-        
-        """Players[0] = read_list[1], etc...
-        """
-        
+            pl.update(
+                {"skip": False, "selected_card": None, "selected_cell": [None, None]}
+            )
+
+        # Players[0] = read_list[1], etc...
+
         # pygame.init()  # pylint: disable=no-member
         self.player_count = len(self.read_list[1:])
         self.clock = pygame.time.Clock()
@@ -64,20 +78,14 @@ class GameServer:
         self.load_fog_image()
         self.init_fog_cells()
 
+        self.highlighted_cells: list = []
+
     def end_game(self):
         """
         This function is used to end the game.
         """
-        font = pygame.font.SysFont("arial", 100)
-        text = font.render("You Win", True, (0, 255, 0))
-        text_rect = text.get_rect()
-        text_rect.center = (
-            self.screen.get_width() // 2,
-            self.screen.get_height() // 2,
-        )
-        self.screen.blit(text, text_rect)
-        pygame.display.flip()
-        sleep(5)
+        # FIXME: add a broadcast to the client
+        log.info("Game ended")
 
     def load_fog_image(self):
         """
@@ -94,21 +102,6 @@ class GameServer:
         """
         self.list_fog_cases = [cell for row in self.board.cells for cell in row]
         self.fog_range = 3
-
-    def draw_fog(self, camera_offset: tuple[int, int]):
-        """This function is used to draw the fog.
-
-        Args:
-            camera_offset (tuple[int, int]): camera offset
-        """
-        for case in self.list_fog_cases:
-            self.screen.blit(
-                self.fog_image,
-                (
-                    case.x * GRAPHICAL_TILE_SIZE + camera_offset[0],
-                    case.y * GRAPHICAL_TILE_SIZE + camera_offset[1],
-                ),
-            )
 
     def get_nearby_cells(self, pawn: Pawn, distance: int):
         """This function is used to get the nearby cells depending on the distance argument.
@@ -264,27 +257,27 @@ class GameServer:
 
     def init_cards_slots(self):
         """This function is used to initialize the cards slots."""
+        # pylint: disable=attribute-defined-outside-init
         self.group_slots_card = [
             self.tab.top_left_slot,
             self.tab.top_right_slot,
             self.tab.bottom_left_slot,
             self.tab.bottom_right_slot,
         ]
-        self.card_croix:Card = card_croix
-        self.card_lightning:Card = card_lightning
-        self.card_horloge:Card = card_horloge
-        self.card_fontaine:Card = card_fontaine
-        self.card_plume:Card = card_plume
-        self.card_up_1:Card = card_up_1
-        self.card_up_2:Card = card_up_2
-        self.card_down_1:Card = card_down_1
-        self.card_down_2:Card = card_down_2
-        self.card_left_1:Card = card_left_1
-        self.card_left_2:Card = card_left_2
-        self.card_right_1:Card = card_right_1
-        self.card_right_2:Card = card_right_2
-        self.card_supreme:Card = card_supreme
-        
+        self.card_croix: Card = card_croix
+        self.card_lightning: Card = card_lightning
+        self.card_horloge: Card = card_horloge
+        self.card_fontaine: Card = card_fontaine
+        self.card_plume: Card = card_plume
+        self.card_up_1: Card = card_up_1
+        self.card_up_2: Card = card_up_2
+        self.card_down_1: Card = card_down_1
+        self.card_down_2: Card = card_down_2
+        self.card_left_1: Card = card_left_1
+        self.card_left_2: Card = card_left_2
+        self.card_right_1: Card = card_right_1
+        self.card_right_2: Card = card_right_2
+        self.card_supreme: Card = card_supreme
 
         match self.player_count:
             case 1:
@@ -292,14 +285,25 @@ class GameServer:
                 self.queue.queue[0].add_card(self.card_down_1)
                 self.queue.queue[0].add_card(self.card_left_1)
                 self.queue.queue[0].add_card(self.card_right_1)
-                self.players[0]["cards"] = [self.card_up_1.get_name, self.card_down_1.get_name, self.card_left_1.get_name, self.card_right_1.get_name]
+                self.players[0]["cards"] = [
+                    self.card_up_1.get_name,
+                    self.card_down_1.get_name,
+                    self.card_left_1.get_name,
+                    self.card_right_1.get_name,
+                ]
             case 2:
                 self.queue.queue[0].add_card(self.card_up_1)
                 self.queue.queue[0].add_card(self.card_down_1)
                 self.queue.queue[1].add_card(self.card_left_1)
                 self.queue.queue[1].add_card(self.card_right_1)
-                self.players[0]["cards"] = [self.card_up_1.get_name, self.card_down_1.get_name]
-                self.players[1]["cards"] = [self.card_left_1.get_name, self.card_right_1.get_name]
+                self.players[0]["cards"] = [
+                    self.card_up_1.get_name,
+                    self.card_down_1.get_name,
+                ]
+                self.players[1]["cards"] = [
+                    self.card_left_1.get_name,
+                    self.card_right_1.get_name,
+                ]
             case 3:
                 self.queue.queue[0].add_card(self.card_up_1)
                 self.queue.queue[1].add_card(self.card_down_1)
@@ -307,7 +311,10 @@ class GameServer:
                 self.queue.queue[2].add_card(self.card_right_1)
                 self.players[0]["cards"] = [self.card_up_1.get_name]
                 self.players[1]["cards"] = [self.card_down_1.get_name]
-                self.players[2]["cards"] = [self.card_left_1.get_name, self.card_right_1.get_name]
+                self.players[2]["cards"] = [
+                    self.card_left_1.get_name,
+                    self.card_right_1.get_name,
+                ]
             case 4:
                 self.queue.queue[0].add_card(self.card_up_1)
                 # self.queue.queue[0].add_card(self.card_supreme)
@@ -316,19 +323,27 @@ class GameServer:
                 self.queue.queue[1].add_card(self.card_down_1)
                 self.queue.queue[2].add_card(self.card_left_1)
                 self.queue.queue[3].add_card(self.card_right_1)
-                self.players[0]["cards"] = [self.card_up_1.get_name, self.card_plume.get_name, self.card_croix.get_name]
+                self.players[0]["cards"] = [
+                    self.card_up_1.get_name,
+                    self.card_plume.get_name,
+                    self.card_croix.get_name,
+                ]
                 self.players[1]["cards"] = [self.card_down_1.get_name]
                 self.players[2]["cards"] = [self.card_left_1.get_name]
                 self.players[3]["cards"] = [self.card_right_1.get_name]
 
+        # pylint: enable=attribute-defined-outside-init
+
     def init_key_slots(self):
         """This function is used to initialize the key slots."""
+        # pylint: disable=attribute-defined-outside-init
         self.group_slots_key = [
             self.tab.first_key_slot,
             self.tab.second_key_slot,
             self.tab.third_key_slot,
             self.tab.fourth_key_slot,
         ]
+        # pylint: enable=attribute-defined-outside-init
 
     def swap_card(self, queue: Queue):
         """This function is used to swap the cards depending on the player.
@@ -350,7 +365,7 @@ class GameServer:
         """
         queue.put(queue.get())
         if isinstance(queue.queue[0], Player):
-            self.data["current_player"] = queue.queue[0].number-1
+            self.data["current_player"] = queue.queue[0].number - 1
             for player in self.players:
                 player["current_player"] = self.data["current_player"]
         #     self.tab.game_info.current_player = "Joueur " + str(queue.queue[0].number)
@@ -398,7 +413,9 @@ class GameServer:
                 self.queue.queue[0].add_card(
                     self.board.cells[new_y][new_x].game_object.card
                 )
-                self.players[self.data["current_player"]]["cards"].append(self.board.cells[new_y][new_x].game_object.card.get_name)
+                self.players[self.data["current_player"]]["cards"].append(
+                    self.board.cells[new_y][new_x].game_object.card.get_name
+                )
                 # ex : Le joueur 1 a récupéré la carte croix
                 # self.tab.log_event.write_logfile(
                 #     "log_event.txt",
@@ -408,7 +425,7 @@ class GameServer:
                 #         self.board.cells[new_y][new_x].game_object.card.name,
                 #     ),
                 # )
-                pass
+
             else:
                 # self.tab.log_event.write_logfile(
                 #     "log_event.txt",
@@ -423,7 +440,9 @@ class GameServer:
         log.debug(isinstance(self.board.cells[new_y][new_x].game_object, MapKey or Key))
         if isinstance(self.board.cells[new_y][new_x].game_object, MapKey or Key):
             self.add_key_slot(self.board.cells[new_y][new_x].game_object.key)
-            self.data["keys"].append(self.board.cells[new_y][new_x].game_object.key.name)
+            self.data["keys"].append(
+                self.board.cells[new_y][new_x].game_object.key.name
+            )
             # ex : Le joueur 1 a récupéré la clé rouge
             # self.tab.log_event.write_logfile(
             #     "log_event.txt",
@@ -470,6 +489,13 @@ class GameServer:
                     return cell.y, cell.x
 
     def handle_card_selection(self, index: int):
+        """This function is used to handle the card selection.
+
+        Args:
+            index (int): index of the card selected
+
+        """
+
         global card_selected, highlighted_cells
         previous_card_selected = self.card_selected
         card_selected = self.tab.handle_click_shortcut_cards(index)
@@ -484,7 +510,7 @@ class GameServer:
             self.highlighted_cells = []
 
         return card_selected
-    
+
     def broadcast(self, blocking=False) -> bool:
         """This method allow to broadcast data to every players in the read list
 
@@ -494,18 +520,24 @@ class GameServer:
         for cli in self.read_list[1:]:
             data = {}
             data.update(self.data)
-            data.update(self.players[self.read_list.index(cli)-1])
-            data.update({
-                "player_number": self.read_list.index(cli)-1,
-            })
+            data.update(self.players[self.read_list.index(cli) - 1])
+            data.update(
+                {
+                    "player_number": self.read_list.index(cli) - 1,
+                }
+            )
             data.update({"elements": self.board.get_all_elements()})
             data = json.dumps(data)
             log.debug("Sending data to player %d : %s", self.read_list.index(cli), data)
             cli.setblocking(blocking)
             try:
                 cli.send(data.encode())
-            except:
-                log.error("Error ! Client %s : connection lost.", self.read_list.index(cli))
+            except Exception as e:
+                # FIXME: change exception catching
+                log.error("Fixme: add the correct exception catching. %s", e)
+                log.error(
+                    "Error ! Client %s : connection lost.", self.read_list.index(cli)
+                )
                 for other_cli in self.read_list[1:]:
                     if other_cli is not cli:
                         other_cli.send(str(-1).encode())
@@ -514,36 +546,38 @@ class GameServer:
                 self.read_list.remove(cli)
                 self.read_list[0].close()
                 quit()
-                
+
         return True
-    
-    def send_game_state(self,blocking=False):
+
+    def send_game_state(self, blocking=False):
         """This function is used to send the initial game state to the clients."""
         self.data["map"] = self.map_chosen
         self.data["player_count"] = self.player_count
-        
+
         self.broadcast(blocking=blocking)
-    
+
     def recv_data(self) -> bool:
         """This method receive data from the server and store it in the self.data_in attribute
 
         Returns:
             bool: False if the receive fail
         """
-        
-        readable, writable, errored = select.select(self.read_list, [], [])
-        for s in readable: # for each socket (server/client)
+
+        readable, _, _ = select.select(self.read_list, [], [])
+        for s in readable:  # for each socket (server/client)
             if s is not self.read_list[0]:
-                data:bytes = s.recv(1024)
+                data: bytes = s.recv(1024)
                 if not data:
                     return False
-                self.players[self.read_list.index(s)-1].update(json.loads(data.decode()))
-                log.debug("Received: %s", self.players[self.read_list.index(s)-1])
+                self.players[self.read_list.index(s) - 1].update(
+                    json.loads(data.decode())
+                )
+                log.debug("Received: %s", self.players[self.read_list.index(s) - 1])
         return True
-        
+
         # cli_number:int = self.data["current_player"]+1
         # current_cli:socket.socket = self.read_list[cli_number]
-        
+
         # current_cli.setblocking(blocking)
         # data:bytes = current_cli.recv(1024)
         # if not data:
@@ -552,8 +586,6 @@ class GameServer:
         # log.debug("Received: %s", self.players[self.data["current_player"]+1])
         # current_cli(False)
         # return True
-        
-    
 
     def run(self):
         """This function is used to run the game."""
@@ -563,9 +595,9 @@ class GameServer:
         card_selected = None
         pawn_selected = None
         self.highlighted_cells = []
-        
+
         self.data["current_player"] = 0
-        
+
         self.send_game_state(True)
 
         # Main loop
@@ -622,12 +654,11 @@ class GameServer:
                                 #             heal_sound.play()
                                 #     # TODO - spawn heart particles
                 continue
-                    
-                    
+
             if isinstance(self.queue.queue[0], Player):
                 self.broadcast()
                 self.data["possible_moves"] = []
-                log.info("It's player %d turn", self.data["current_player"]+1)
+                log.info("It's player %d turn", self.data["current_player"] + 1)
                 # Wait for player data
                 self.recv_data()
                 # If the player press space, the turn is skipped
@@ -638,22 +669,43 @@ class GameServer:
                     # card_selected = None
                     # pawn_selected = None
                     self.swap_player(self.queue)
-                        # elif event.key == pygame.K_ESCAPE:  # pylint: disable=no-member
-                        #     return
-                
+                    # elif event.key == pygame.K_ESCAPE:  # pylint: disable=no-member
+                    #     return
+
                 # If a card is selected
-                elif self.players[self.data["current_player"]]["selected_card"] is not None:
+                elif (
+                    self.players[self.data["current_player"]]["selected_card"]
+                    is not None
+                ):
                     # get the selected card object
                     for card in self.queue.queue[0].cards:
-                        if card.get_name == self.players[self.data["current_player"]]["selected_card"]:
+                        if (
+                            card.get_name
+                            == self.players[self.data["current_player"]][
+                                "selected_card"
+                            ]
+                        ):
                             card_selected = card
                             break
-                            
+
                     # Get what the player selected on the board
-                    if self.players[self.data["current_player"]]["selected_cell"][0] is not None and self.players[self.data["current_player"]]["selected_cell"][1] is not None:
-                        clicked_cell = self.board.cells[self.players[self.data["current_player"]]["selected_cell"][0]][self.players[self.data["current_player"]]["selected_cell"][1]]
+                    if (
+                        self.players[self.data["current_player"]]["selected_cell"][0]
+                        is not None
+                        and self.players[self.data["current_player"]]["selected_cell"][
+                            1
+                        ]
+                        is not None
+                    ):
+                        clicked_cell = self.board.cells[
+                            self.players[self.data["current_player"]]["selected_cell"][
+                                0
+                            ]
+                        ][self.players[self.data["current_player"]]["selected_cell"][1]]
                         # TODO: get the selected card OBJECT
-                        if clicked_cell.game_object and isinstance(clicked_cell.game_object, Pawn):
+                        if clicked_cell.game_object and isinstance(
+                            clicked_cell.game_object, Pawn
+                        ):
                             pawn_selected = clicked_cell.game_object
                             self.highlighted_cells = []
                             self.unhilight()
@@ -664,16 +716,34 @@ class GameServer:
                             self.data["possible_moves"] = self.highlighted_cells
                         else:
                             # Search if the clicked cell is in the highlighted cells
-                            if (self.players[self.data["current_player"]]["selected_cell"][0], self.players[self.data["current_player"]]["selected_cell"][1]) in self.highlighted_cells:
+                            if (
+                                self.players[self.data["current_player"]][
+                                    "selected_cell"
+                                ][0],
+                                self.players[self.data["current_player"]][
+                                    "selected_cell"
+                                ][1],
+                            ) in self.highlighted_cells:
                                 pawn_y, pawn_x = self.get_coord_pawn(pawn_selected)
-                                new_y, new_x = self.players[self.data["current_player"]]["selected_cell"][0], self.players[self.data["current_player"]]["selected_cell"][1]
+                                new_y, new_x = (
+                                    self.players[self.data["current_player"]][
+                                        "selected_cell"
+                                    ][0],
+                                    self.players[self.data["current_player"]][
+                                        "selected_cell"
+                                    ][1],
+                                )
 
                                 # Move the pawn on the new cell
                                 self.move_check_key_and_card(
                                     pawn_selected, new_y, new_x, pawn_y, pawn_x
                                 )
-                                self.players[self.data["current_player"]]["selected_card"] = None
-                                self.players[self.data["current_player"]]["selected_cell"] = None
+                                self.players[self.data["current_player"]][
+                                    "selected_card"
+                                ] = None
+                                self.players[self.data["current_player"]][
+                                    "selected_cell"
+                                ] = None
                                 self.data["possible_moves"] = []
 
                                 # End of the turn
@@ -682,5 +752,5 @@ class GameServer:
                                 self.unhilight()
                                 clicked_cell = None
                                 card_selected = None
-                                pawn_selected = None  
+                                pawn_selected = None
                     card_selected = None
