@@ -1,10 +1,9 @@
 {
-    "recommendations": [
-        "ms-python.black-formatter",
-        "exodiusstudios.comment-anchors",
-        "ms-python.isort",
-        "ms-python.vscode-pylance",
-        "ms-python.pylint",
-        "njpwerner.autodocstring"
-    ]
+  "recommendations": [
+    "ms-python.black-formatter",
+    "exodiusstudios.comment-anchors",
+    "ms-python.isort",
+    "ms-python.vscode-pylance",
+    "njpwerner.autodocstring"
+  ]
 }
