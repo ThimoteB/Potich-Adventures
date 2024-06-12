@@ -534,7 +534,7 @@ class Client:
         Returns:
             Card: card object
         """
-        global card_selected
+        global card_selected, highlighted_cells
         previous_card_selected = self.card_selected
         card_selected = self.tab.handle_click_shortcut_cards(index)
 
