@@ -4,7 +4,15 @@ import multiprocessing as mp
 import pygame
 from rich.logging import RichHandler
 
-from classes import CreditsPage, PlayersPage, MapPage, RulePage, GamemodePage, WaitingPage, LobbyPage
+from classes import (
+    CreditsPage,
+    PlayersPage,
+    MapPage,
+    RulePage,
+    GamemodePage,
+    WaitingPage,
+    LobbyPage,
+)
 from game import Game
 from client import Client
 
@@ -48,9 +56,9 @@ class Main:
         self.in_main_game = False
         self.map_chosen = None
         self.fog = False
-        
+
         self.host = ""
-        self.sock:socket.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.sock: socket.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.players = []
 
     def draw_options(self, options, do_not_clear=False, manual_offset=0):
@@ -74,24 +82,29 @@ class Main:
 
             self.screen.blit(text, text_rect)
             pygame.draw.rect(self.screen, (255, 0, 0), option_hitbox, 2)
-    
+
     def draw_input(self, input):
         screen_width, screen_height = self.screen.get_size()
-        total_height = 2*70
+        total_height = 2 * 70
         y = (screen_height - total_height) // 2
         box_width = 200
         box_height = 64
-        input_box = pygame.Rect((screen_width // 2) - (box_width // 2), (screen_height // 2) - (box_height // 2), box_width, box_height)
+        input_box = pygame.Rect(
+            (screen_width // 2) - (box_width // 2),
+            (screen_height // 2) - (box_height // 2),
+            box_width,
+            box_height,
+        )
         color_inactive = self.white
-        color_active = pygame.Color('red')
+        color_active = pygame.Color("red")
         color = color_inactive
-        text = ''
+        text = ""
         active = False
-        
+
         sample_text = self.font.render(input, True, self.white)
         sample_rect = sample_text.get_rect(center=(screen_width // 2, y))
-        
-        done:bool = False
+
+        done: bool = False
         while not done:
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
@@ -106,7 +119,7 @@ class Main:
                     # Change the current color of the input box.
                     color = color_active if active else color_inactive
                 if event.type == pygame.KEYDOWN:
-                    if (event.key == pygame.K_ESCAPE):
+                    if event.key == pygame.K_ESCAPE:
                         return
                     if active:
                         if event.key == pygame.K_RETURN:
@@ -120,11 +133,11 @@ class Main:
             # Render the current text.
             txt_surface = self.font.render(text, True, self.white)
             # Resize the box if the text is too long.
-            width = max(200, txt_surface.get_width()+10)
+            width = max(200, txt_surface.get_width() + 10)
             input_box.w = width
             # Blit the text.
             self.screen.blit(sample_text, sample_rect)
-            self.screen.blit(txt_surface, (input_box.x+5, input_box.y+5))            
+            self.screen.blit(txt_surface, (input_box.x + 5, input_box.y + 5))
             # Blit the input_box rect.
             pygame.draw.rect(self.screen, color, input_box, 2)
 
@@ -168,7 +181,13 @@ class Main:
                     running = False
                 elif event.type == pygame.MOUSEBUTTONDOWN:  # pylint: disable=no-member
                     mouse_pos = pygame.mouse.get_pos()
-                    if not choosing_players and not choosing_map and not tutorial and not choosing_gamemode and not online:
+                    if (
+                        not choosing_players
+                        and not choosing_map
+                        and not tutorial
+                        and not choosing_gamemode
+                        and not online
+                    ):
                         clicked_option_index = self.on_click(mouse_pos)
                         if clicked_option_index != -1:
                             selected_text = self.options[clicked_option_index]
@@ -209,12 +228,14 @@ class Main:
                                 choosing_players = False
                                 self.current_state = "Map"
                                 choosing_map = True
-                                
+
                         elif choosing_gamemode:
                             clicked_option_index = self.on_click(mouse_pos)
                             if clicked_option_index != -1:
-                                selected_text = gamemode_page.gamemode_options[clicked_option_index]
-                                if selected_text == "Solo": # normal game, no changes
+                                selected_text = gamemode_page.gamemode_options[
+                                    clicked_option_index
+                                ]
+                                if selected_text == "Solo":  # normal game, no changes
                                     self.player_count = 1
                                     self.current_state = "Map"
                                     choosing_map = True
@@ -224,11 +245,13 @@ class Main:
                                     self.current_state = "Online"
                                     online = True
                                     choosing_gamemode = False
-                        
+
                         elif online:
                             clicked_option_index = self.on_click(mouse_pos)
                             if clicked_option_index != -1:
-                                selected_text = lobby_page.button_text[clicked_option_index]
+                                selected_text = lobby_page.button_text[
+                                    clicked_option_index
+                                ]
                                 if selected_text == "Start the game":
                                     self.current_state = "Start"
 
@@ -248,14 +271,12 @@ class Main:
                     elif self.current_state == "Tutorial":
                         tutorial = False
                         self.current_state = "Lobby"
-                    elif self.current_state == "Gamemode": # back to lobby when in online/offline page
+                    elif (
+                        self.current_state == "Gamemode"
+                    ):  # back to lobby when in online/offline page
                         self.current_state = "Lobby"
                     elif self.current_state == "Online":
                         self.current_state = "Gamemode"
-                        
-                        
-                        
-                        
 
             self.screen.fill(self.black)
 
@@ -265,7 +286,7 @@ class Main:
                 tutorial_page.draw()
             elif self.current_state == "Credits":
                 credits_page.draw()
-            elif self.current_state == "Gamemode": # Online/Offline page selection
+            elif self.current_state == "Gamemode":  # Online/Offline page selection
                 self.draw_options(gamemode_page.gamemode_options)
             elif self.current_state == "Players":
                 self.draw_options(players_page.player_count_options)
@@ -283,15 +304,15 @@ class Main:
                 # try to reach the server
                 WaitingPage(self.screen, self.host).draw()
                 pygame.display.flip()
-                
-                result = self.sock.connect_ex((self.host,PORT))
+
+                result = self.sock.connect_ex((self.host, PORT))
                 if result == 0:
                     log.debug("Server connection okay")
                     self.current_state = "OnlineLobby"
                     LobbyPage(self.screen).draw()
                 else:
                     log.warning("Connection failed")
-                    
+
             # Connection etablished : waiting for other players
             elif self.current_state == "OnlineLobby":
                 # wait for the server to send the number of players
@@ -309,10 +330,11 @@ class Main:
                     pass
                 self.sock.setblocking(True)
                 lobby_page.draw(self.players)
-                self.draw_options([lobby_page.button_text], True, 100 + 64 * len(self.players))
+                self.draw_options(
+                    [lobby_page.button_text], True, 100 + 64 * len(self.players)
+                )
                 pygame.display.flip()
-                
-        
+
             elif self.current_state == "Start":
                 log.info("Starting the game")
                 # TODO: start the game
