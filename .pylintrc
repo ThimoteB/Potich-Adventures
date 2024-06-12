@@ -25,7 +25,7 @@ clear-cache-post-run=no
 # A comma-separated list of package or module names from where C extensions may
 # be loaded. Extensions are loading into the active Python interpreter and may
 # run arbitrary code.
-extension-pkg-allow-list=
+extension-pkg-allow-list=pygame.constants,
 
 # A comma-separated list of package or module names from where C extensions may
 # be loaded. Extensions are loading into the active Python interpreter and may
@@ -439,8 +439,8 @@ disable=raw-checker-failed,
         #CUSTOM
         fixme, # Déjà géré par "CommentAnchors"
         # FIXME - Désactivation temporaire de certaines erreurs, à réactiver un jour :)
-        no-member,
-        attribute-defined-outside-init
+        #no-member,
+        #attribute-defined-outside-init
          
 
 # Enable the message, report, category or checker with the given id(s). You can
