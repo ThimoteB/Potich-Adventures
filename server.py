@@ -110,17 +110,21 @@ class Server(object):
             self.update_start_status()
         return self.read_list
 
+    def close(self) -> None:
+        for s in self.read_list:
+            s.close()
 
 if __name__ == "__main__":
     while True:
-        # try:
-        #     server = Server()
-        #     game = GameServer(server.start())
-        #     game.run()
-        # except Exception as e:
-        #     log.error(f'Error : {e}')
-        #     continue
+        try:
+            server = Server()
+            game = GameServer(server.start())
+            game.run()
+        except Exception as e:
+            server.close()
+            log.error(f'Error : {e}')
+            continue
 
-        server = Server(args.max_players)
-        game = GameServer(server.start())
-        game.run()
+        # server = Server(args.max_players)
+        # game = GameServer(server.start())
+        # game.run()

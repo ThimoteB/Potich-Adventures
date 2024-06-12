@@ -349,6 +349,7 @@ class Client:
                 if c.get_name == card:
                     self.group_slots_card[i].add_item(c)
                     break
+
         # pylint: enable=attribute-defined-outside-init
 
     def update_cards(self):
@@ -594,6 +595,14 @@ class Client:
             if self.is_key_slot_full():
                 self.end_game()
                 break
+
+            if self.data_in["current_player"] == self.player_number:
+                self.tab.game_info.current_player = "C'est votre tour"
+
+            else:
+                self.tab.game_info.current_player = (
+                    f" Tour du joueur {self.data_in['current_player'] + 1} "
+                )
 
             for event in pygame.event.get():
                 # TODO: client side event management
