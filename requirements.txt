@@ -3,3 +3,4 @@ Pillow
 PyTMX
 rich
 discord.py
+requests
