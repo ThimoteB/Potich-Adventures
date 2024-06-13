@@ -645,6 +645,7 @@ class Board(pygame.sprite.Sprite):
         for row in self.cells:
             for cell in row:
                 if cell.game_object:
+                    found: bool = False
                     for element in elements:
                         if isinstance(cell.game_object, Pawn):
                             if cell.game_object.name == element[0]:
@@ -652,12 +653,16 @@ class Board(pygame.sprite.Sprite):
                                 cell.remove_object()
                                 pawn.health = element[1]
                                 self.cells[element[2]][element[3]].add_pawn(pawn)
+                                found = True
                         elif isinstance(cell.game_object, Enemy):
                             if cell.game_object.name == element[0]:
                                 enemy = cell.game_object
                                 cell.remove_object()
                                 enemy.health = element[1]
                                 self.cells[element[2]][element[3]].add_enemy(enemy)
+                                found = True
+                    if not found:
+                        cell.remove_object()
 
         for row in self.cells:
             for cell in row:
