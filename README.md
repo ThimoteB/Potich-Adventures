@@ -18,7 +18,7 @@
   <!-- ![GitHub commit activity](https://img.shields.io/github/commit-activity/w/ThimoteB/Jeux-Python?style=for-the-badge) -->
 
 
-  [Contexte](##contexte) - [Gestion du projet](##gestion-du-projet) - [:star: Nous supporter :star:](#Nous-supporter)
+  [Contexte](#contexte) - [Gestion du projet](#gestion-du-projet) - [:star: Nous supporter :star:](#Nous-supporter)
 
 
   ---
