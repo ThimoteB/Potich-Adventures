@@ -17,7 +17,7 @@ class GameInfo(pygame.sprite.Sprite):
         super().__init__()
         self.font = pygame.font.Font(None, 48)
         self.color = (255, 255, 255)
-        self.current_player = "Joueur 1"
+        self.current_player = "Tour du joueur 2"
         self.text = self.font.render(self.current_player, True, (self.color))
         self.text_rect = self.text.get_rect()
         # Centre le texte sur la position X  de la black zone
