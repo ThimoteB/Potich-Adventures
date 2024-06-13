@@ -22,14 +22,21 @@ from game_constants.consts import PORT, PAYLOAD_SIZE
 
 # program-wide logging formatter
 root_logger = logging.getLogger()
+print(root_logger.name)
 
-handler = RichHandler()
-root_logger.addHandler(handler)
+console_handler = RichHandler()
+root_logger.addHandler(console_handler)
+
+file_handler = logging.FileHandler("client.log")
+file_handler.setLevel(logging.DEBUG)
+file_handler.setFormatter(
+    logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
+)
+root_logger.addHandler(file_handler)
+
 
 root_logger.setLevel(logging.DEBUG)
-
 root_logger.propagate = False
-
 log = logging.getLogger(__name__)
 
 

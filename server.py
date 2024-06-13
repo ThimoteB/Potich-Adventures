@@ -12,13 +12,24 @@ from rich.logging import RichHandler
 from game_server import GameServer
 from game_constants.consts import HOST, PORT, PAYLOAD_SIZE
 
-# program-wide logging formatter
+# server root formatter
 root_logger = logging.getLogger()
-handler = RichHandler()
-root_logger.addHandler(handler)
+print(root_logger.name)
+
+console_handler = RichHandler()
+root_logger.addHandler(console_handler)
+
+file_handler = logging.FileHandler("server.log")
+file_handler.setLevel(logging.DEBUG)
+file_handler.setFormatter(
+    logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
+)
+root_logger.addHandler(file_handler)
+
 root_logger.setLevel(logging.DEBUG)
 root_logger.propagate = False
 log = logging.getLogger(__name__)
+
 
 parser = argparse.ArgumentParser()
 parser.add_argument(
@@ -128,7 +139,7 @@ if __name__ == "__main__":
     while True:
         try:
             server = Server(args.max_players)
-            game = GameServer(server.start(),args.map[0]+".tmx")
+            game = GameServer(server.start(), args.map[0] + ".tmx")
             game.run()
         except Exception as e:
             server.close()
