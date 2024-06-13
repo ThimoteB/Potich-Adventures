@@ -87,7 +87,7 @@ class Client:
 
     def recv_data(self, blocking=False) -> bool:
         """This method receive data from the server and store it in the self.data_in attribute
-        
+
         params:
             blocking (bool): if the receive should be blocking or not
 
@@ -391,6 +391,8 @@ class Client:
         ]
         # pylint: enable=attribute-defined-outside-init
 
+        key_slot_width: int = 80
+        key_slot_height: int = 80
         self.red_key = Key(
             "images/red key.png", key_slot_width, key_slot_height, "red key"
         )
