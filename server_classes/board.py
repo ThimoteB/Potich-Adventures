@@ -9,6 +9,8 @@ import math
 import pytmx
 from .cell import Cell
 from .map_object import Tile, MapKey, Pawn, Enemy, MapCard
+from server_classes.goal.playerGoal import playerGoal
+from server_classes.goal.cardGoal import cardGoal
 
 # from .map_object import AnimatedTile
 from .card import list_of_cards  # pylint: disable=wildcard-import
@@ -265,13 +267,6 @@ class Board:
         Returns:
             bool: True if the enemy was moved, False otherwise
         """
-        final_choice = ""
-
-        if enemy.chase_player == 0 and enemy.chase_card == 0:
-            if random.random() >= 0.5:
-                enemy.chase_player = 1
-            else:
-                enemy.chase_card = 1
 
         ia = enemy.ia
         if ia:
@@ -289,23 +284,28 @@ class Board:
             else:
                 ia = True
 
+        # Get the enemy's coordinates
         enemy_y, enemy_x = self.get_coordinates_object(enemy)
 
         self.check_enemy_attack(enemy_x, enemy_y)
 
         if ia:
-
-            # PROBA ENTRE CARD ET PLAYER
-            if random.random() <= enemy.chase_player:
-                final_choice = "player"
-                enemy.chase_player -= 0.01
-                enemy.previous_choice_enemy = "player"
-            else:
-                final_choice = "card"
-                enemy.previous_choice_enemy = "card"
+            # get the current ememy's goal
+            goal = enemy.goal
+            if goal is None :
+                enemy.goal = playerGoal()
+            elif random.random() >= goal.change_probability:
+                if isinstance(goal, cardGoal):
+                    enemy.goal = playerGoal()
+                else:
+                    enemy.goal = cardGoal()
+            
+            # change proba for this move
+            enemy.goal.regression()
+            print(enemy.name,enemy.goal.name, enemy.goal)
 
             ##############################
-            if final_choice == "player":
+            if isinstance(enemy.goal, playerGoal):
                 # Find the closest player
                 closest_player = None
                 closest_distance = float("inf")
@@ -317,7 +317,7 @@ class Board:
                                 end_cell = cell
                                 closest_distance = distance
 
-            elif final_choice == "card":
+            elif isinstance(enemy.goal, cardGoal):
                 # Find the longest path to a card
                 longuest_card = None
                 longuest_distance = float("-inf")
@@ -333,7 +333,6 @@ class Board:
             start_node = (enemy_y, enemy_x)
             end_node = (end_cell.y, end_cell.x)
             path = self.a_star(start_node, end_node)
-            log.debug("enemy name : %s ; path : %s", enemy.name, path)
 
             # Move the enemy along the path
             if path:
