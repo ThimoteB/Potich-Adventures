@@ -9,6 +9,8 @@ import math
 import pytmx
 from .cell import Cell
 from .map_object import Tile, MapKey, Pawn, Enemy, MapCard
+from server_classes.goal.playerGoal import playerGoal
+from server_classes.goal.cardGoal import cardGoal
 
 # from .map_object import AnimatedTile
 from .card import list_of_cards  # pylint: disable=wildcard-import
@@ -265,15 +267,16 @@ class Board:
         Returns:
             bool: True if the enemy was moved, False otherwise
         """
+
         ia = enemy.ia
         if ia:
             match count_player:
                 case 1:
                     pourcent = 0.6
                 case 2:
-                    pourcent = 0.7
-                case 3:
                     pourcent = 0.85
+                case 3:
+                    pourcent = 0.90
                 case 4:
                     pourcent = 1
             if random.random() >= pourcent:
@@ -281,29 +284,55 @@ class Board:
             else:
                 ia = True
 
+        # Get the enemy's coordinates
         enemy_y, enemy_x = self.get_coordinates_object(enemy)
 
         self.check_enemy_attack(enemy_x, enemy_y)
 
         if ia:
-            # Find the closest player
-            closest_player = None
-            closest_distance = float("inf")
-            for row in self.cells:
-                for cell in row:
-                    if cell.game_object and isinstance(cell.game_object, Pawn):
-                        distance = math.sqrt(
-                            (enemy_y - cell.y) ** 2 + (enemy_x - cell.x) ** 2
-                        )
-                        if distance < closest_distance:
-                            closest_player = cell
-                            closest_distance = distance
+            # get the current ememy's goal
+            goal = enemy.goal
+            if goal is None :
+                enemy.goal = playerGoal()
+            elif random.random() >= goal.change_probability:
+                if isinstance(goal, cardGoal):
+                    enemy.goal = playerGoal()
+                else:
+                    enemy.goal = cardGoal()
+            
+            # change proba for this move
+            enemy.goal.regression()
+            print(enemy.name,enemy.goal.name, enemy.goal)
+
+            ##############################
+            if isinstance(enemy.goal, playerGoal):
+                # Find the closest player
+                closest_player = None
+                closest_distance = float("inf")
+                for row in self.cells:
+                    for cell in row:
+                        if cell.game_object and isinstance(cell.game_object, Pawn):
+                            distance = (enemy_y - cell.y) ** 2 + (enemy_x - cell.x) ** 2
+                            if distance < closest_distance:
+                                end_cell = cell
+                                closest_distance = distance
+
+            elif isinstance(enemy.goal, cardGoal):
+                # Find the longest path to a card
+                longuest_card = None
+                longuest_distance = float("-inf")
+                for row in self.cells:
+                    for cell in row:
+                        if cell.game_object and isinstance(cell.game_object, MapCard):
+                            distance = (enemy_y - cell.y) ** 2 + (enemy_x - cell.x) ** 2
+                            if distance > longuest_distance:
+                                end_cell = cell
+                                longuest_distance = distance
 
             # Find the shortest path to the closest player using Dijkstra
             start_node = (enemy_y, enemy_x)
-            end_node = (closest_player.y, closest_player.x)
+            end_node = (end_cell.y, end_cell.x)
             path = self.a_star(start_node, end_node)
-            log.debug("enemy name : %s ; path : %s", enemy.name, path)
 
             # Move the enemy along the path
             if path:
