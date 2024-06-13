@@ -9,7 +9,7 @@ TICK_DURATION_MS = int(1 / TICK_RATE * 1000)
 SOUND = False
 
 # Network constants (used by server and client)
-PAYLOAD_SIZE = 4096
+PAYLOAD_SIZE = 123456
 
 # Server constants (server.py)
 HOST: str = "127.0.0.1"
