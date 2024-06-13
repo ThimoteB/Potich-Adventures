@@ -8,6 +8,7 @@ import select
 
 import pygame  # pylint: disable=import-error
 
+from discord_handler import DiscordHandler
 from game_constants.consts import GRAPHICAL_TILE_SIZE, PAYLOAD_SIZE
 from server_classes import Board, Player, Card, Key, Pawn, Enemy, EndTurn
 from server_classes.map_object import MapCard, MapKey
@@ -31,6 +32,8 @@ from server_classes.card import (
 
 
 log = logging.getLogger(__name__)
+discord_handler = DiscordHandler()
+log.addHandler(discord_handler)
 
 
 class GameServer:
