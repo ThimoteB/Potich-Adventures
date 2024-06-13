@@ -1,4 +1,5 @@
 """ This module is used to create the slots for the cards and the keys."""
+
 import pygame
 
 

@@ -1,5 +1,4 @@
 """ This module is used to create the slots for the cards and the keys."""
-import pygame
 
 
 class Slot:
@@ -11,7 +10,7 @@ class Slot:
 
     def __init__(
         # self, screen: pygame.surface, width: int, height: int, position: tuple
-        self
+        self,
     ):
         """This function is used to initialize the slots
         that will just be used to store cards or keys.
@@ -22,7 +21,6 @@ class Slot:
             height (int): represents the height of the slot
             position (tuple): represents the position of the slot
         """
-        super().__init__()
         # self.image = pygame.Surface((width, height))
         # self.rect = self.image.get_rect()
         # self.rect.topleft = position
@@ -72,10 +70,10 @@ class CardSlot(Slot):
         # position: tuple,
         # image: str,
     ):
+        super().__init__()
         # super().__init__(screen, width, height, position)
         # self.image = pygame.image.load(image)
         # self.image = pygame.transform.scale(self.image, (150, 220))
-        pass
 
 
 class KeySlot(Slot):
@@ -85,9 +83,6 @@ class KeySlot(Slot):
         pygame (_type_): Sprite class from pygame
     """
 
-    def __init__(  # pylint: disable=useless-super-delegation
-        self
-    ):
+    def __init__(self):  # pylint: disable=useless-super-delegation
         # super().__init__(screen, width, height, position)
         super().__init__()
-        pass

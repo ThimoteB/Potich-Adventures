@@ -1,9 +1,27 @@
 """This file contains the card class that will be used to create the cards."""
+
 import logging
 
 import pygame
 
-from moves import *  # pylint: disable=wildcard-import,unused-wildcard-import
+from moves import (
+    move_croix,
+    move_down_1,
+    move_down_2,
+    move_fontaine,
+    move_horloge,
+    move_left_1,
+    move_left_2,
+    move_lightning,
+    move_plume,
+    move_right_1,
+    move_right_2,
+    move_supreme,
+    move_up_1,
+    move_up_2,
+)
+
+from game_constants.consts import CARD_SLOT_HEIGHT, CARD_SLOT_WIDTH
 
 log = logging.getLogger(__name__)
 
@@ -49,52 +67,52 @@ class Card(pygame.sprite.Sprite):  # pylint: disable=too-few-public-methods
         self.selected = not self.selected
         log.debug("Selected: %s", self.selected)
         # log.debug("Moves: %s", self.moves) # crashes the game if the "SUPREME CARD" is selected
-    
+
     @property
     def get_name(self):
+        """Returns the name of the card."""
+        # TODO: refactor self.name to self._name and change the "get_name" property to "name"
         return self.name
 
 
-card_slot_width = 150
-card_slot_height = 220
 list_of_cards = []
 card_croix = Card(
-    "images/croix.png", card_slot_width, card_slot_height, move_croix, "Croix"
+    "images/croix.png", CARD_SLOT_WIDTH, CARD_SLOT_HEIGHT, move_croix, "Croix"
 )
 card_lightning = Card(
-    "images/lightning.png", card_slot_width, card_slot_height, move_lightning, "Eclair"
+    "images/lightning.png", CARD_SLOT_WIDTH, CARD_SLOT_HEIGHT, move_lightning, "Eclair"
 )
 card_horloge = Card(
-    "images/horloge.png", card_slot_width, card_slot_height, move_horloge, "Horloge"
+    "images/horloge.png", CARD_SLOT_WIDTH, CARD_SLOT_HEIGHT, move_horloge, "Horloge"
 )
 card_fontaine = Card(
-    "images/fontaine.png", card_slot_width, card_slot_height, move_fontaine, "Fontaine"
+    "images/fontaine.png", CARD_SLOT_WIDTH, CARD_SLOT_HEIGHT, move_fontaine, "Fontaine"
 )
 card_plume = Card(
-    "images/plume.png", card_slot_width, card_slot_height, move_plume, "Plume"
+    "images/plume.png", CARD_SLOT_WIDTH, CARD_SLOT_HEIGHT, move_plume, "Plume"
 )
-card_up_1 = Card("images/up_1.png", card_slot_width, card_slot_height, move_up_1, "Up1")
-card_up_2 = Card("images/up_2.png", card_slot_width, card_slot_height, move_up_2, "Up2")
+card_up_1 = Card("images/up_1.png", CARD_SLOT_WIDTH, CARD_SLOT_HEIGHT, move_up_1, "Up1")
+card_up_2 = Card("images/up_2.png", CARD_SLOT_WIDTH, CARD_SLOT_HEIGHT, move_up_2, "Up2")
 card_down_1 = Card(
-    "images/down_1.png", card_slot_width, card_slot_height, move_down_1, "Down1"
+    "images/down_1.png", CARD_SLOT_WIDTH, CARD_SLOT_HEIGHT, move_down_1, "Down1"
 )
 card_down_2 = Card(
-    "images/down_2.png", card_slot_width, card_slot_height, move_down_2, "Down2"
+    "images/down_2.png", CARD_SLOT_WIDTH, CARD_SLOT_HEIGHT, move_down_2, "Down2"
 )
 card_left_1 = Card(
-    "images/left_1.png", card_slot_width, card_slot_height, move_left_1, "Left1"
+    "images/left_1.png", CARD_SLOT_WIDTH, CARD_SLOT_HEIGHT, move_left_1, "Left1"
 )
 card_left_2 = Card(
-    "images/left_2.png", card_slot_width, card_slot_height, move_left_2, "Left2"
+    "images/left_2.png", CARD_SLOT_WIDTH, CARD_SLOT_HEIGHT, move_left_2, "Left2"
 )
 card_right_1 = Card(
-    "images/right_1.png", card_slot_width, card_slot_height, move_right_1, "Right1"
+    "images/right_1.png", CARD_SLOT_WIDTH, CARD_SLOT_HEIGHT, move_right_1, "Right1"
 )
 card_right_2 = Card(
-    "images/right_2.png", card_slot_width, card_slot_height, move_right_2, "Right2"
+    "images/right_2.png", CARD_SLOT_WIDTH, CARD_SLOT_HEIGHT, move_right_2, "Right2"
 )
 card_supreme = Card(
-    "images/supreme.png", card_slot_width, card_slot_height, move_supreme, "Supreme"
+    "images/supreme.png", CARD_SLOT_WIDTH, CARD_SLOT_HEIGHT, move_supreme, "Supreme"
 )
 
 list_of_cards.append(card_croix)

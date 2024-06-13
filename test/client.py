@@ -3,6 +3,8 @@
 import socket
 from time import sleep
 
+from game_constants.consts import PAYLOAD_SIZE
+
 s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 s.connect(("", 44440))
 
@@ -13,7 +15,7 @@ print("Connecté")
 # print("sent:", message)
 
 while True:
-    data = s.recv(1024)
+    data = s.recv(PAYLOAD_SIZE)
     print(data)
     sleep(1)
 

@@ -1,15 +1,16 @@
 """ This module is used to create the log_event."""
-import pygame
 
 
-class LogEvent(pygame.sprite.Sprite):
+class LogEvent:
     """This class is used to create the game info."""
 
-    def __init__(self, 
-                #  screen, 
-                 width: int, 
-                 height: int, 
-                 space_from_top: int):
+    def __init__(
+        self,
+        #  screen,
+        width: int,
+        height: int,
+        space_from_top: int,
+    ):
         """This function is used to initialize the log event.
 
         Args:
@@ -18,8 +19,6 @@ class LogEvent(pygame.sprite.Sprite):
             height (int): represents the height of the game info
         """
         super().__init__()
-        self.font = pygame.font.Font(None, 36)
-        self.color = (255, 255, 255)
         self.list_log = [""]
         # self.base_text_rect = (screen.get_width() - width - 40, space_from_top)
         # self.base_y = screen.get_height()
@@ -31,7 +30,7 @@ class LogEvent(pygame.sprite.Sprite):
         self.reset_logfile("log_event.txt")
 
     def read_logfile(self, log_file: str):
-        with open(log_file, "r") as file:
+        with open(log_file, "r", encoding="utf-8") as file:
             lines = file.readlines()
 
             if lines:
@@ -43,7 +42,7 @@ class LogEvent(pygame.sprite.Sprite):
             self.list_log = [line.rstrip("\n") for line in lines[1:]]
 
     def write_logfile(self, log_file: str, text: str):
-        with open(log_file, "r+") as file:
+        with open(log_file, "r+", encoding="utf-8") as file:
             lines = file.readlines()
 
             if lines:
@@ -72,7 +71,7 @@ class LogEvent(pygame.sprite.Sprite):
         Args:
             log_file (str): represents the path of the log file
         """
-        with open(log_file, "w") as file:
+        with open(log_file, "w", encoding="utf-8") as file:
             file.write("0")
 
     # def draw_text(self, screen: pygame.surface):

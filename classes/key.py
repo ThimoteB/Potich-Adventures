@@ -1,7 +1,10 @@
 """This file contains the key class that will be used to create the keys."""
+
 import logging
 
 import pygame
+
+from game_constants.consts import KEY_SLOT_HEIGHT, KEY_SLOT_WIDTH
 
 log = logging.getLogger(__name__)
 
@@ -33,14 +36,12 @@ class Key(pygame.sprite.Sprite):  # pylint: disable=too-few-public-methods
             log.error("Failed to load image from path: %s", image_path)
 
 
-key_slot_width = 80
-key_slot_height = 80
-list_of_keys:list[Key] = []
+list_of_keys: list[Key] = []
 
-red_key = Key("images/red key.png", key_slot_width, key_slot_height, "red key")
-blue_key = Key("images/blue key.png", key_slot_width, key_slot_height, "blue key")
-green_key = Key("images/green key.png", key_slot_width, key_slot_height, "green key")
-yellow_key = Key("images/yellow key.png", key_slot_width, key_slot_height, "yellow key")
+red_key = Key("images/red key.png", KEY_SLOT_WIDTH, KEY_SLOT_HEIGHT, "red key")
+blue_key = Key("images/blue key.png", KEY_SLOT_WIDTH, KEY_SLOT_HEIGHT, "blue key")
+green_key = Key("images/green key.png", KEY_SLOT_WIDTH, KEY_SLOT_HEIGHT, "green key")
+yellow_key = Key("images/yellow key.png", KEY_SLOT_WIDTH, KEY_SLOT_HEIGHT, "yellow key")
 list_of_keys.append(blue_key)
 list_of_keys.append(green_key)
 list_of_keys.append(red_key)

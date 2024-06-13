@@ -18,7 +18,7 @@ from classes import (
 )
 from game import Game
 from client import Client
-from game_constants.consts import PORT
+from game_constants.consts import PORT, PAYLOAD_SIZE
 
 # program-wide logging formatter
 root_logger = logging.getLogger()
@@ -326,7 +326,7 @@ class Main:
                 # wait for the server to send the number of players
                 self.sock.setblocking(False)
                 try:
-                    data = self.sock.recv(1024)
+                    data = self.sock.recv(PAYLOAD_SIZE)
                     data = json.loads(data.decode())
                     log.debug(data)
                     self.players = []

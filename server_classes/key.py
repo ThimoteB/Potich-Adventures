@@ -1,12 +1,12 @@
 """This file contains the key class that will be used to create the keys."""
+
 import logging
 
-import pygame
 
 log = logging.getLogger(__name__)
 
 
-class Key(pygame.sprite.Sprite):  # pylint: disable=too-few-public-methods
+class Key:  # pylint: disable=too-few-public-methods
     """This class is used to create the keys IN THE SIDEBAR.
 
     Args:
@@ -22,15 +22,7 @@ class Key(pygame.sprite.Sprite):  # pylint: disable=too-few-public-methods
             height (int): represents the height of the key
         """
         super().__init__()
-        self.image = pygame.image.load(image_path)  # Load the image
         self.name = name
-        if self.image:
-            self.image = pygame.transform.scale(
-                self.image, (width, height)
-            )  # Resize the image
-            self.rect = self.image.get_rect()
-        else:
-            log.error("Failed to load image from path: %s", image_path)
 
 
 key_slot_width = 80

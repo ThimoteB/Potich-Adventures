@@ -1,4 +1,5 @@
 """ This module is used to create the grey zone which is the zone to open the tab. """
+
 import logging
 
 import pygame

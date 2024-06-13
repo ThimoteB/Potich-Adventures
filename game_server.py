@@ -8,8 +8,8 @@ import select
 
 import pygame  # pylint: disable=import-error
 
-from game_constants.consts import GRAPHICAL_TILE_SIZE
-from server_classes import Tab, Board, Player, Card, Key, Camera, Pawn, Enemy, EndTurn
+from game_constants.consts import GRAPHICAL_TILE_SIZE, PAYLOAD_SIZE
+from server_classes import Board, Player, Card, Key, Pawn, Enemy, EndTurn
 from server_classes.map_object import MapCard, MapKey
 
 from server_classes.card import (
@@ -66,13 +66,15 @@ class GameServer:
         # pygame.init()  # pylint: disable=no-member
         self.player_count = len(self.read_list[1:])
         self.clock = pygame.time.Clock()
-        self.camera = self.init_camera(mapchoose)
         # self.camera.set_bounds(self.screen.get_width(), self.screen.get_height())
         self.map_chosen = mapchoose
         self.board = Board.from_tmx("maps/" + self.map_chosen, False)
-        self.data.update(self.board.get_item_spawn())
+
+        # self.data.update(self.board.get_item_spawn())
+        self.data["card_map_list"] = self.board.get_item_spawn()["card_map_list"]
+        self.data["key_map_list"] = self.board.get_item_spawn()["key_map_list"]
+
         # self.board.resize_tiles(GRAPHICAL_TILE_SIZE, GRAPHICAL_TILE_SIZE)
-        self.tab = Tab()
         self.init_game_elements(mapchoose)
         self.fog = fog
         self.load_fog_image()
@@ -127,27 +129,7 @@ class GameServer:
                 # Verif if the cell is in the range of the pawn
                 if distance_to_cell <= distance:
                     around_cases.append(cell)
-
         return around_cases
-
-    def init_camera(self, mapchoose: str):
-        """This function is used to initialize the camera.
-
-        Args:
-            mapchoose (str): map chosen by the player
-
-        Returns:
-            Camera: camera object
-        """
-        camera_positions = {
-            "map1.tmx": (450, 1300),
-            "map2.tmx": (750, 900),
-            "map3.tmx": (0, 800),
-            "map4.tmx": (1400, 700),
-            "map5.tmx": (700, 780),
-            "map_courte.tmx": (560, 600),
-        }
-        return Camera(*camera_positions.get(mapchoose, (0, 0)))
 
     def init_game_elements(self, mapchoose: str):
         """This function is used to initialize the game elements.
@@ -258,12 +240,6 @@ class GameServer:
     def init_cards_slots(self):
         """This function is used to initialize the cards slots."""
         # pylint: disable=attribute-defined-outside-init
-        self.group_slots_card = [
-            self.tab.top_left_slot,
-            self.tab.top_right_slot,
-            self.tab.bottom_left_slot,
-            self.tab.bottom_right_slot,
-        ]
         self.card_croix: Card = card_croix
         self.card_lightning: Card = card_lightning
         self.card_horloge: Card = card_horloge
@@ -337,25 +313,8 @@ class GameServer:
     def init_key_slots(self):
         """This function is used to initialize the key slots."""
         # pylint: disable=attribute-defined-outside-init
-        self.group_slots_key = [
-            self.tab.first_key_slot,
-            self.tab.second_key_slot,
-            self.tab.third_key_slot,
-            self.tab.fourth_key_slot,
-        ]
+
         # pylint: enable=attribute-defined-outside-init
-
-    def swap_card(self, queue: Queue):
-        """This function is used to swap the cards depending on the player.
-
-        Args:
-            queue (Queue): queue object
-        """
-        for slot in self.group_slots_card:
-            slot.reset_item()
-        if isinstance(queue.queue[0], Player):
-            for card in queue.queue[0].cards:
-                self.group_slots_card[queue.queue[0].cards.index(card)].add_item(card)
 
     def swap_player(self, queue: Queue):
         """This function is used to swap the player.
@@ -376,25 +335,6 @@ class GameServer:
         #     self.tab.game_info.current_player = "Enemy"
         self.unhilight()
         # self.tab.unselect_all_cards()
-
-    def add_key_slot(self, key: Key):
-        """This function is used to add a key slot.
-
-        Args:
-            key (Key): key object
-        """
-        for slot in self.group_slots_key:
-            if slot.item is None:
-                slot.add_item(key)
-                break
-
-    def is_key_slot_full(self):
-        """This function is used to check if the key slot is full.
-
-        Returns:
-            bool: True if the key slot is full, False otherwise
-        """
-        return all(slot.item is not None for slot in self.group_slots_key)
 
     def move_check_key_and_card(
         self, pawn_selected: Pawn, new_y: int, new_x: int, pawn_y: int, pawn_x: int
@@ -439,7 +379,6 @@ class GameServer:
 
         log.debug(isinstance(self.board.cells[new_y][new_x].game_object, MapKey or Key))
         if isinstance(self.board.cells[new_y][new_x].game_object, MapKey or Key):
-            self.add_key_slot(self.board.cells[new_y][new_x].game_object.key)
             self.data["keys"].append(
                 self.board.cells[new_y][new_x].game_object.key.name
             )
@@ -552,7 +491,7 @@ class GameServer:
 
         return True
 
-    def send_game_state(self, blocking=False):
+    def init_game_broadcast(self, blocking=False):
         """This function is used to send the initial game state to the clients."""
         self.data["map"] = self.map_chosen
         self.data["player_count"] = self.player_count
@@ -569,7 +508,7 @@ class GameServer:
         readable, _, _ = select.select(self.read_list, [], [])
         for s in readable:  # for each socket (server/client)
             if s is not self.read_list[0]:
-                data: bytes = s.recv(1024)
+                data: bytes = s.recv(PAYLOAD_SIZE)
                 if not data:
                     return False
                 self.players[self.read_list.index(s) - 1].update(
@@ -582,7 +521,7 @@ class GameServer:
         # current_cli:socket.socket = self.read_list[cli_number]
 
         # current_cli.setblocking(blocking)
-        # data:bytes = current_cli.recv(1024)
+        # data:bytes = current_cli.recv(PAYLOAD_SIZE)
         # if not data:
         #     return False
         # self.players[cli_number] = json.loads(data.decode())
@@ -601,13 +540,13 @@ class GameServer:
 
         self.data["current_player"] = 0
 
-        self.send_game_state(True)
+        self.init_game_broadcast(True)
 
         # Main loop
         while True:
 
             # End game if all the key slots are full
-            if self.is_key_slot_full():
+            if len(self.data["keys"]) == 4:
                 self.end_game()
                 break
 

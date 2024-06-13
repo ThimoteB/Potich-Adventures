@@ -11,7 +11,7 @@ from classes import Board, Camera, Card, Enemy, Key, Pawn, Tab
 from classes.card import *  # pylint: disable=unused-wildcard-import,wildcard-import
 from classes.key import *  # pylint: disable=unused-wildcard-import,wildcard-import
 from classes.map_object import MapCard, MapKey
-from game_constants.consts import GRAPHICAL_TILE_SIZE, TICK_RATE
+from game_constants.consts import GRAPHICAL_TILE_SIZE, TICK_RATE, PAYLOAD_SIZE
 from moves import *  # Import all the moves # pylint: disable=unused-wildcard-import,wildcard-import
 
 log = logging.getLogger(__name__)
@@ -55,11 +55,11 @@ class Client:
         self.camera = self.init_camera(self.data_in["map"])
         self.camera.set_bounds(self.screen.get_width(), self.screen.get_height())
         self.board = Board.from_tmx(
-            "maps/" + self.map_chosen,
-            self.camera,
-            False,
-            self.data_in["card_map_list"],
-            self.data_in["key_map_list"],
+            tmx_file="maps/" + self.map_chosen,
+            camera=self.camera,
+            rect=False,
+            card_map_list=self.data_in["card_map_list"],
+            key_map_list=self.data_in["key_map_list"],
         )
         # TODO: edit board class to load cards and keys
         self.board.resize_tiles(GRAPHICAL_TILE_SIZE, GRAPHICAL_TILE_SIZE)
@@ -96,7 +96,7 @@ class Client:
         """
         self.sock.setblocking(blocking)
         try:
-            data: bytes = self.sock.recv(1024)
+            data: bytes = self.sock.recv(PAYLOAD_SIZE)
             if not data:
                 return False
             self.data_in = json.loads(data.decode())
@@ -730,7 +730,7 @@ class Client:
 
 #     sock: socket.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 #     sock.connect_ex(("127.0.0.1", 44440))
-#     log.debug(sock.recv(1024).decode())
+#     log.debug(sock.recv(PAYLOAD_SIZE).decode())
 
 #     game = Client(sock)
 #     game.run()

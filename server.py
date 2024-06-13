@@ -31,7 +31,7 @@ parser.add_argument(
 args = parser.parse_args()
 
 
-class Server(object):
+class Server:
     """This class handles the connections from the client. It doesn't handle the game logic."""
 
     def __init__(self, max_players: int = 2) -> None:
@@ -97,7 +97,7 @@ class Server(object):
                     if len(self.read_list[1:]) != self.max_players:
                         self.broadcast(self.pre_game_data)
                 else:  # manage client socket
-                    data = s.recv(1024)
+                    data = s.recv(PAYLOAD_SIZE)
                     if data:  # received data
                         data = data.decode()
                         log.debug("Received from %s : %s", s.getpeername(), data)
@@ -114,6 +114,7 @@ class Server(object):
         for s in self.read_list:
             s.close()
 
+
 if __name__ == "__main__":
     while True:
         try:
@@ -122,9 +123,5 @@ if __name__ == "__main__":
             game.run()
         except Exception as e:
             server.close()
-            log.error(f'Error : {e}')
+            log.error(f"Error : {e}")
             continue
-
-        # server = Server(args.max_players)
-        # game = GameServer(server.start())
-        # game.run()
