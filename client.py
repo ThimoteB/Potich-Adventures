@@ -16,7 +16,7 @@ from moves import *  # Import all the moves # pylint: disable=unused-wildcard-im
 
 log = logging.getLogger(__name__)
 
-# Parce que on a défini une globale en dessous :)
+# Parce que on a défini une globale en dessous :
 card_selected: Card = None
 highlighted_cells: list = []
 
@@ -370,7 +370,6 @@ class Client:
         for i in range(4):
             self.group_slots_key[i].reset_item()
         for i, key in enumerate(self.data_in["keys"]):
-            print(f"key : ", {key})
             match key:
                 case "red key":
                     self.group_slots_key[i].add_item(self.red_key)
