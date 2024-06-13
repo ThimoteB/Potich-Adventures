@@ -20,6 +20,9 @@ class Enemy(Entity):
         ia=False,
     ):
         super().__init__(name, health, attack, element)
+        self.chase_player: float = 0
+        self.chase_card: float = 0
+        self.previous_choice_enemy: str = ""
 
         # self.resize(GRAPHICAL_TILE_SIZE, GRAPHICAL_TILE_SIZE)
 

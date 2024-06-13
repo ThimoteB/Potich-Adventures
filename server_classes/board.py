@@ -265,15 +265,23 @@ class Board:
         Returns:
             bool: True if the enemy was moved, False otherwise
         """
+        final_choice = ""
+
+        if enemy.chase_player == 0 and enemy.chase_card == 0:
+            if random.random() >= 0.5:
+                enemy.chase_player = 1
+            else:
+                enemy.chase_card = 1
+
         ia = enemy.ia
         if ia:
             match count_player:
                 case 1:
                     pourcent = 0.6
                 case 2:
-                    pourcent = 0.7
-                case 3:
                     pourcent = 0.85
+                case 3:
+                    pourcent = 0.90
                 case 4:
                     pourcent = 1
             if random.random() >= pourcent:
@@ -286,22 +294,44 @@ class Board:
         self.check_enemy_attack(enemy_x, enemy_y)
 
         if ia:
-            # Find the closest player
-            closest_player = None
-            closest_distance = float("inf")
-            for row in self.cells:
-                for cell in row:
-                    if cell.game_object and isinstance(cell.game_object, Pawn):
-                        distance = math.sqrt(
-                            (enemy_y - cell.y) ** 2 + (enemy_x - cell.x) ** 2
-                        )
-                        if distance < closest_distance:
-                            closest_player = cell
-                            closest_distance = distance
+
+            # PROBA ENTRE CARD ET PLAYER
+            if random.random() <= enemy.chase_player:
+                final_choice = "player"
+                enemy.chase_player -= 0.01
+                enemy.previous_choice_enemy = "player"
+            else:
+                final_choice = "card"
+                enemy.previous_choice_enemy = "card"
+
+            ##############################
+            if final_choice == "player":
+                # Find the closest player
+                closest_player = None
+                closest_distance = float("inf")
+                for row in self.cells:
+                    for cell in row:
+                        if cell.game_object and isinstance(cell.game_object, Pawn):
+                            distance = (enemy_y - cell.y) ** 2 + (enemy_x - cell.x) ** 2
+                            if distance < closest_distance:
+                                end_cell = cell
+                                closest_distance = distance
+
+            elif final_choice == "card":
+                # Find the longest path to a card
+                longuest_card = None
+                longuest_distance = float("-inf")
+                for row in self.cells:
+                    for cell in row:
+                        if cell.game_object and isinstance(cell.game_object, MapCard):
+                            distance = (enemy_y - cell.y) ** 2 + (enemy_x - cell.x) ** 2
+                            if distance > longuest_distance:
+                                end_cell = cell
+                                longuest_distance = distance
 
             # Find the shortest path to the closest player using Dijkstra
             start_node = (enemy_y, enemy_x)
-            end_node = (closest_player.y, closest_player.x)
+            end_node = (end_cell.y, end_cell.x)
             path = self.a_star(start_node, end_node)
             log.debug("enemy name : %s ; path : %s", enemy.name, path)
 
