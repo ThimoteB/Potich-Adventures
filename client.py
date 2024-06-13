@@ -367,10 +367,16 @@ class Client:
         for i in range(4):
             self.group_slots_key[i].reset_item()
         for i, key in enumerate(self.data_in["keys"]):
-            for k in list_of_keys:
-                if k.name == key[0]:
-                    self.group_slots_key[i].add_item(k)
-                    break
+            print(f"key : ", {key})
+            match key:
+                case "red key":
+                    self.group_slots_key[i].add_item(self.red_key)
+                case "blue key":
+                    self.group_slots_key[i].add_item(self.blue_key)
+                case "green key":
+                    self.group_slots_key[i].add_item(self.green_key)
+                case "yellow key":
+                    self.group_slots_key[i].add_item(self.yellow_key)
 
     def init_key_slots(self):
         """This function is used to initialize the key slots."""
@@ -382,6 +388,19 @@ class Client:
             self.tab.fourth_key_slot,
         ]
         # pylint: enable=attribute-defined-outside-init
+
+        self.red_key = Key(
+            "images/red key.png", key_slot_width, key_slot_height, "red key"
+        )
+        self.blue_key = Key(
+            "images/blue key.png", key_slot_width, key_slot_height, "blue key"
+        )
+        self.green_key = Key(
+            "images/green key.png", key_slot_width, key_slot_height, "green key"
+        )
+        self.yellow_key = Key(
+            "images/yellow key.png", key_slot_width, key_slot_height, "yellow key"
+        )
 
     def add_key_slot(self, key: Key):
         """This function is used to add a key slot.
