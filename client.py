@@ -723,21 +723,21 @@ class Client:
             pygame.display.flip()
 
 
-# if __name__ == "__main__":
-#     # Can be used to test a single client connection
-#     from rich.logging import RichHandler
+if __name__ == "__main__":
+    # Can be used to test a single client connection
+    from rich.logging import RichHandler
 
-#     root_logger = logging.getLogger()
-#     handler = RichHandler()
-#     root_logger.addHandler(handler)
-#     root_logger.setLevel(logging.DEBUG)
-#     root_logger.propagate = False
-#     log = logging.getLogger(__name__)
+    root_logger = logging.getLogger()
+    handler = RichHandler()
+    root_logger.addHandler(handler)
+    root_logger.setLevel(logging.DEBUG)
+    root_logger.propagate = False
+    log = logging.getLogger(__name__)
 
-#     sock: socket.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-#     sock.connect_ex(("127.0.0.1", 44440))
-#     log.debug(sock.recv(PAYLOAD_SIZE).decode())
+    sock: socket.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    sock.connect_ex(("127.0.0.1", 44440))
+    log.debug(sock.recv(PAYLOAD_SIZE).decode())
 
-#     game = Client(sock)
-#     game.run()
-#     pygame.quit()
+    game = Client(sock)
+    game.run()
+    pygame.quit()
