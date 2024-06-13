@@ -442,22 +442,6 @@ class Board(pygame.sprite.Sprite):
                 continue
             for x, y, gid in layer:
                 if gid in props_catalogue and props_catalogue[gid]["frames"]:
-                    # animated tile
-                    frames = []
-                    frame_durations = []
-                    for frame in props_catalogue[gid]["frames"]:
-                        frames.append(tmx_data.get_tile_image_by_gid(frame.gid))
-                        frame_durations.append(frame.duration)
-
-                    # self.cells[y][x].add_layer(
-                    #     AnimatedTile(
-                    #         props_catalogue[gid].get("walkable", True),
-                    #         frames,
-                    #         frame_durations,
-                    #     )
-                    # )
-                else:
-                    # normal tile
                     self.cells[y][x].add_layer(
                         Tile(
                             props_catalogue[gid].get("walkable", True)
