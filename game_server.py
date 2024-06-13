@@ -426,7 +426,7 @@ class GameServer:
             for cell in row:
                 if cell.game_object == pawn:
                     return cell.y, cell.x
-
+                  
     def broadcast(self, blocking=False) -> bool:
         """This method allow to broadcast data to every players in the read list
 
