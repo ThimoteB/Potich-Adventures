@@ -87,6 +87,9 @@ class Client:
 
     def recv_data(self, blocking=False) -> bool:
         """This method receive data from the server and store it in the self.data_in attribute
+        
+        params:
+            blocking (bool): if the receive should be blocking or not
 
         Returns:
             bool: False if the receive fail
