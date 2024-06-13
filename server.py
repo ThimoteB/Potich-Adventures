@@ -114,17 +114,14 @@ class Server:
         for s in self.read_list:
             s.close()
 
+
 if __name__ == "__main__":
     while True:
         try:
-            server = Server()
+            server = Server(args.max_players)
             game = GameServer(server.start())
             game.run()
         except Exception as e:
             server.close()
-            log.error(f'Error : {e}')
+            log.error(f"Error : {e}")
             continue
-
-        # server = Server(args.max_players)
-        # game = GameServer(server.start())
-        # game.run()
