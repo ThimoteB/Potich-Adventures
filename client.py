@@ -236,30 +236,34 @@ class Client:
 
         self.enemy1 = Enemy(
             pygame.image.load("images/gamesprites/pawn/char_35.png").convert_alpha(),
-            "Squelette1",
+            "Squelette",
             100,
             20,
+            "Neutral",
             ia=True,
         )
         self.enemy2 = Enemy(
-            pygame.image.load("images/gamesprites/pawn/char_35.png").convert_alpha(),
-            "Squelette2",
+            pygame.image.load("images/gamesprites/pawn/char_28.png").convert_alpha(),
+            "Zombie",
             100,
             20,
+            "Fire",
             ia=True,
         )
         self.enemy3 = Enemy(
-            pygame.image.load("images/gamesprites/pawn/char_35.png").convert_alpha(),
-            "Squelette3",
+            pygame.image.load("images/gamesprites/pawn/char_33.png").convert_alpha(),
+            "Golem de Terre",
             100,
             20,
+            "Grass",
             ia=True,
         )
         self.enemy4 = Enemy(
-            pygame.image.load("images/gamesprites/pawn/char_35.png").convert_alpha(),
-            "Squelette4",
+            pygame.image.load("images/gamesprites/pawn/char_26.png").convert_alpha(),
+            "Pieuvre",
             100,
             20,
+            "Water",
             ia=True,
         )
 
