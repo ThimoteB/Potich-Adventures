@@ -29,9 +29,11 @@ from server_classes.card import (
     card_plume,
 )
 
-# from server_classes.key import *
+from discord_handler import DiscordLogHandler
+
 
 log = logging.getLogger(__name__)
+log.addHandler(DiscordLogHandler())
 
 
 class GameServer:
@@ -39,7 +41,9 @@ class GameServer:
     This class is used to create the main loop of the game.
     """
 
-    def __init__(self, read_list:list[socket.socket], mapchoose="map_courte.tmx", fog=False):
+    def __init__(
+        self, read_list: list[socket.socket], mapchoose="map_courte.tmx", fog=False
+    ):
         """Sockets list -> first socket is the server socket, the others are client sockets"""
         self.read_list: list[socket.socket] = read_list
         self.read_list[0].setblocking(True)
@@ -450,16 +454,16 @@ class GameServer:
 
         return card_selected
 
-    def broadcast(self, blocking:bool=False) -> bool:
+    def broadcast(self, blocking: bool = False) -> bool:
         """This method allow to broadcast data to every players in the read list
-        
+
         params:
-            blocking (bool): set the blocking mode of the socket 
+            blocking (bool): set the blocking mode of the socket
 
         Args:
             data (dict): a dict of data to be sent
         """
-        for index,cli in enumerate(self.read_list[1:]):
+        for index, cli in enumerate(self.read_list[1:]):
             data = {}
             data.update(self.data)
             data.update(self.players[index])
@@ -477,9 +481,7 @@ class GameServer:
             except Exception as e:
                 # FIXME: change exception catching
                 log.error("Fixme: add the correct exception catching. %s", e)
-                log.error(
-                    "Error ! Client %s : connection lost.", index + 1
-                )
+                log.error("Error ! Client %s : connection lost.", index + 1)
                 for other_cli in self.read_list[1:]:
                     if other_cli is not cli:
                         other_cli.send(str(-1).encode())
