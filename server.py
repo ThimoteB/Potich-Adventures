@@ -27,14 +27,13 @@ file_handler.setFormatter(
 )
 root_logger.addHandler(file_handler)
 
-discord_handler = DiscordHandler()
-# discord_handler.setLevel(logging.ERROR)
-root_logger.addHandler(discord_handler)
-
 
 root_logger.setLevel(logging.DEBUG)
 root_logger.propagate = False
 log = logging.getLogger(__name__)
+
+discord_handler = DiscordHandler()
+log.addHandler(discord_handler)
 
 
 parser = argparse.ArgumentParser()

@@ -22,7 +22,6 @@ from game_constants.consts import PORT, PAYLOAD_SIZE
 
 # program-wide logging formatter
 root_logger = logging.getLogger()
-print(root_logger.name)
 
 console_handler = RichHandler()
 root_logger.addHandler(console_handler)
