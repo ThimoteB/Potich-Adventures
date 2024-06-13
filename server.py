@@ -10,7 +10,7 @@ import argparse
 from rich.logging import RichHandler
 
 from game_server import GameServer
-from game_constants.consts import HOST, PORT
+from game_constants.consts import HOST, PORT, PAYLOAD_SIZE
 
 # program-wide logging formatter
 root_logger = logging.getLogger()
@@ -27,6 +27,15 @@ parser.add_argument(
     help="Number of players to wait for before starting the game. Default is 2",
     default=2,
     nargs="?",
+)
+parser.add_argument(
+    "-m",
+    "--map",
+    type=str,
+    help="Map file to load. Default is 'map_courte'",
+    default="map_courte",
+    required=False,
+    nargs=1,
 )
 args = parser.parse_args()
 
@@ -119,7 +128,7 @@ if __name__ == "__main__":
     while True:
         try:
             server = Server(args.max_players)
-            game = GameServer(server.start())
+            game = GameServer(server.start(),args.map[0]+".tmx")
             game.run()
         except Exception as e:
             server.close()
