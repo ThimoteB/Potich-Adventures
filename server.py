@@ -79,7 +79,7 @@ class Server:
         server_socket: socket.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         server_socket.bind((HOST, PORT))
-        server_socket.listen(5)
+        server_socket.listen(self.max_players)
         log.info("Listening on %s", server_socket.getsockname())
 
         self.read_list = [server_socket]

@@ -39,7 +39,7 @@ class GameServer:
     This class is used to create the main loop of the game.
     """
 
-    def __init__(self, read_list, mapchoose="map2.tmx", fog=False):
+    def __init__(self, read_list:list[socket.socket], mapchoose="map_courte.tmx", fog=False):
         """Sockets list -> first socket is the server socket, the others are client sockets"""
         self.read_list: list[socket.socket] = read_list
         self.read_list[0].setblocking(True)
@@ -426,25 +426,51 @@ class GameServer:
             for cell in row:
                 if cell.game_object == pawn:
                     return cell.y, cell.x
-                  
-    def broadcast(self, blocking=False) -> bool:
+
+    def handle_card_selection(self, index: int):
+        """This function is used to handle the card selection.
+
+        Args:
+            index (int): index of the card selected
+
+        """
+
+        global card_selected, highlighted_cells
+        previous_card_selected = self.card_selected
+        card_selected = self.tab.handle_click_shortcut_cards(index)
+
+        # Check if the same card is re-selected
+        if card_selected == previous_card_selected:
+            self.highlighted_cells = []
+            card_selected = None
+            self.unhilight()
+        elif card_selected:
+            self.unhilight()
+            self.highlighted_cells = []
+
+        return card_selected
+
+    def broadcast(self, blocking:bool=False) -> bool:
         """This method allow to broadcast data to every players in the read list
+        
+        params:
+            blocking (bool): set the blocking mode of the socket 
 
         Args:
             data (dict): a dict of data to be sent
         """
-        for cli in self.read_list[1:]:
+        for index,cli in enumerate(self.read_list[1:]):
             data = {}
             data.update(self.data)
-            data.update(self.players[self.read_list.index(cli) - 1])
+            data.update(self.players[index])
             data.update(
                 {
-                    "player_number": self.read_list.index(cli) - 1,
+                    "player_number": index,
                 }
             )
             data.update({"elements": self.board.get_all_elements()})
             data = json.dumps(data)
-            log.debug("Sending data to player %d : %s", self.read_list.index(cli), data)
+            log.debug("Sending data to player %d : %s", index, data)
             cli.setblocking(blocking)
             try:
                 cli.send(data.encode())
@@ -452,7 +478,7 @@ class GameServer:
                 # FIXME: change exception catching
                 log.error("Fixme: add the correct exception catching. %s", e)
                 log.error(
-                    "Error ! Client %s : connection lost.", self.read_list.index(cli)
+                    "Error ! Client %s : connection lost.", index + 1
                 )
                 for other_cli in self.read_list[1:]:
                     if other_cli is not cli:
