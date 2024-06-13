@@ -1,6 +1,5 @@
 """ This file contains all the possible moves of the game. """
 
-
 move_croix = [
     [0, 0, 0, 0, 0, 0, 0],
     [0, 0, 0, 1, 0, 0, 0],
@@ -175,5 +174,5 @@ move_right_3 = [
 ]
 
 
-move_supreme = [[1 for i in range(1000)] for j in range(1000)]
-move_supreme[500][500] = 2
+move_supreme = [[1 for i in range(200)] for j in range(200)]
+move_supreme[100][100] = 2

@@ -1,8 +1,6 @@
 """ This file contains the board class that will be used to create the board and the cells."""
 
-
 from __future__ import annotations
-from collections import defaultdict
 
 import random
 import logging
@@ -146,7 +144,6 @@ class Board(pygame.sprite.Sprite):
         if self.cells[new_y][new_x].has_enemy():
             # Attack the enemy
             enemy = self.cells[new_y][new_x].game_object
-            name = enemy.name
 
             pawn.attack_target(enemy)
             enemy.take_damage(pawn.attack)
@@ -246,14 +243,31 @@ class Board(pygame.sprite.Sprite):
         # If we reached here, no path was found
         return []
 
-    def heuristic(self, current, goal):
-        # Using Manhattan distance for heuristic
+    def heuristic(self, current, goal) -> int:
+        """Provides a heuristic for the A* algorithm. Uses Manhattan distance.
+
+        Args:
+            current (tuple): current position
+            goal (tuple): goal position
+
+        Returns:
+            int: heuristic value"""
         return abs(current[0] - goal[0]) + abs(current[1] - goal[1])
 
-    def move_enemy(self, enemy: Enemy, count_player: int) -> bool:
+    def move_enemy(self, enemy: Enemy, player_count: int) -> bool:
+        """This function is used to move the enemy.
+
+        Args:
+            enemy (Enemy): represents the enemy
+            count_player (int): represents the number of players
+
+        Returns:
+            bool: True if the enemy was moved, False otherwise
+        """
+        # FIXME: Implémenter la logique d'IA plus avancée ici.
         ia = enemy.ia
         if ia:
-            match count_player:
+            match player_count:
                 case 1:
                     pourcent = 0.6
                 case 2:
@@ -388,9 +402,14 @@ class Board(pygame.sprite.Sprite):
         for row in self.cells:
             for cell in row:
                 cell.resize(width, height)
-                
 
-    def _load_from_tmx(self, tmx_file: str, rect: bool = False, card_map_list:list = [], key_map_list:list = []):
+    def _load_from_tmx(
+        self,
+        tmx_file: str,
+        card_map_list: list,
+        key_map_list: list,
+        rect: bool = False,
+    ):
         """This function is used to load the board from a tmx file.
 
         Args:
@@ -455,9 +474,11 @@ class Board(pygame.sprite.Sprite):
                     # normal tile
                     self.cells[y][x].add_layer(
                         Tile(
-                            props_catalogue[gid].get("walkable", True)
-                            if gid in props_catalogue
-                            else True,
+                            (
+                                props_catalogue[gid].get("walkable", True)
+                                if gid in props_catalogue
+                                else True
+                            ),
                             tmx_data.get_tile_image_by_gid(gid),
                         )
                     )
@@ -515,17 +536,23 @@ class Board(pygame.sprite.Sprite):
                         for default_card in list_of_cards:
                             if card[0] == default_card.name:
                                 tmx_gid = card[3]
-                                new_card:Card = default_card
+                                new_card: Card = default_card
                                 frames = []
                                 frame_durations = []
                                 og_gid = tmx_gids_to_og[tmx_gid]
                                 og_gid = og_gid - 10  # valeur en brut en mode balek
                                 img_gid = og_gids_to_tmx[og_gid]
-                                for frame in tmx_data.get_tile_properties_by_gid(img_gid)["frames"]:
-                                    frames.append(tmx_data.get_tile_image_by_gid(frame.gid))
+                                for frame in tmx_data.get_tile_properties_by_gid(
+                                    img_gid
+                                )["frames"]:
+                                    frames.append(
+                                        tmx_data.get_tile_image_by_gid(frame.gid)
+                                    )
                                     frame_durations.append(frame.duration)
-                                new_map_card = MapCard(frames, frame_durations, new_card)
-                                new_map_card.resize(32,32)
+                                new_map_card = MapCard(
+                                    frames, frame_durations, new_card
+                                )
+                                new_map_card.resize(32, 32)
                                 cell.game_object = new_map_card
 
         # resize cells
@@ -566,7 +593,7 @@ class Board(pygame.sprite.Sprite):
 
         #     key.resize(32, 32)
         #     self.cells[coordinates[1]][coordinates[0]].game_object = key
-        
+
         for row in self.cells:
             for cell in row:
                 for key in key_map_list:
@@ -574,19 +601,24 @@ class Board(pygame.sprite.Sprite):
                         for default_key in list_of_keys:
                             if key[0] == default_key.name:
                                 tmx_gid = key[3]
-                                new_key:Key = default_key
+                                new_key: Key = default_key
                                 og_gid = tmx_gids_to_og[tmx_gid]
-                                og_gid = og_gid - 50  # offset of the sprite sheet (spawner -> key)
+                                og_gid = (
+                                    og_gid - 50
+                                )  # offset of the sprite sheet (spawner -> key)
                                 img_gid = og_gids_to_tmx[og_gid]
                                 frames = []
                                 frame_durations = []
-                                for frame in tmx_data.get_tile_properties_by_gid(img_gid)["frames"]:
-                                    frames.append(tmx_data.get_tile_image_by_gid(frame.gid))
+                                for frame in tmx_data.get_tile_properties_by_gid(
+                                    img_gid
+                                )["frames"]:
+                                    frames.append(
+                                        tmx_data.get_tile_image_by_gid(frame.gid)
+                                    )
                                     frame_durations.append(frame.duration)
                                 new_map_key = MapKey(frames, frame_durations, new_key)
-                                new_map_key.resize(32,32)
+                                new_map_key.resize(32, 32)
                                 cell.game_object = new_map_key
-                                
 
         # get the tile props ("heal") for the layer "campfire"
         layer = tmx_data.get_layer_by_name("campfire")
@@ -601,8 +633,10 @@ class Board(pygame.sprite.Sprite):
         for row in self.cells:
             for cell in row:
                 cell.resize(GRAPHICAL_TILE_SIZE, GRAPHICAL_TILE_SIZE)
-                
-    def update_elements(self, elements:list[list[str, int, int, int]], possible_moves:list[int,int]) -> None:
+
+    def update_elements(
+        self, elements: list[list[str, int, int, int]], possible_moves: list[int, int]
+    ) -> None:
         """This function is used to update the elements of the board.
 
         Args:
@@ -624,21 +658,26 @@ class Board(pygame.sprite.Sprite):
                                 cell.remove_object()
                                 enemy.health = element[1]
                                 self.cells[element[2]][element[3]].add_enemy(enemy)
-        
+
         for row in self.cells:
             for cell in row:
                 cell.unhighlight()
-        
+
         if possible_moves:
             for move_y, move_x in possible_moves:
                 cell = self.cells[move_y][move_x]
                 cell.highlight()
-                                
+
     # Classmethods
 
     @classmethod
     def from_tmx(
-        cls, tmx_file: str, camera: tuple[int, int], rect: bool = False, card_map_list:list = [], key_map_list:list = []
+        cls,
+        tmx_file: str,
+        camera: tuple[int, int],
+        card_map_list: list,
+        key_map_list: list,
+        rect: bool = False,
     ) -> Board:
         """This function is used to create the board from a tmx file.
 
@@ -646,6 +685,12 @@ class Board(pygame.sprite.Sprite):
             tmx_file (str): represents the tmx file
             camera (object): represents the camera
         """
+
         board = cls(0, 0, 0, 0, camera)
-        board._load_from_tmx(tmx_file, rect, card_map_list, key_map_list)
+        board._load_from_tmx(
+            tmx_file=tmx_file,
+            rect=rect,
+            card_map_list=card_map_list,
+            key_map_list=key_map_list,
+        )
         return board

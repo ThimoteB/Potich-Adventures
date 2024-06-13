@@ -1,4 +1,5 @@
 """ This module is used to create the game info."""
+
 import pygame
 
 

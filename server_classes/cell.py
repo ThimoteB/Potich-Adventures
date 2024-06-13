@@ -1,10 +1,8 @@
 """ This file contains the case class that will represent the cases on the board. """
 
 from __future__ import annotations
-import pygame
-from game_constants.consts import GRAPHICAL_TILE_SIZE
-from .camera import Camera
 from .map_object import Tile, Pawn, Enemy
+
 # from .map_object import AnimatedTile
 
 
@@ -70,49 +68,6 @@ class Cell:  # pylint: disable=too-many-instance-attributes
         """
         for tile in self.layers:
             tile.resize(width, height)
-
-    def draw(self, surface: pygame.surface.Surface, camera: Camera) -> None:
-        """Draws the cell on the screen.
-
-        Args:
-            surface (pygame.surface.Surface): The surface to draw the cell on.
-            camera (Camera): The camera instance.
-        """
-        for tile in self.layers:
-            tile.draw(
-                self.x * GRAPHICAL_TILE_SIZE,
-                self.y * GRAPHICAL_TILE_SIZE,
-                surface,
-                camera,
-            )
-        if self.game_object:
-            self.game_object.draw(
-                self.x * GRAPHICAL_TILE_SIZE,
-                self.y * GRAPHICAL_TILE_SIZE,
-                surface,
-                camera,
-            )
-
-        if self.highlighted:
-            # Draw a green rectangle around the cell
-            highlight_rect = pygame.Rect(
-                self.x * GRAPHICAL_TILE_SIZE - camera.x,
-                self.y * GRAPHICAL_TILE_SIZE - camera.y,
-                GRAPHICAL_TILE_SIZE,
-                GRAPHICAL_TILE_SIZE,
-            )
-            pygame.draw.rect(surface, self.highlight_color, highlight_rect, 2, 10)
-
-    def tick(self, frame_id: int) -> None:
-        """Ticks the cell.
-
-        Args:
-            frame_id (int): The current frame id.
-        """
-        for tile in self.layers:
-            tile.tick(frame_id)
-        if self.game_object:
-            self.game_object.tick(frame_id)
 
     def remove_object(self) -> None:
         """Removes the object from the cell."""

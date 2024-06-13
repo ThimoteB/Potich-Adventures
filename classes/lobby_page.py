@@ -1,4 +1,5 @@
 """ Page for the credits of the game """
+
 import pygame
 
 
@@ -10,12 +11,14 @@ class LobbyPage:
         self.font = pygame.font.Font(None, 64)
         self.button_text = "Start the game"
         self.waiting_text = [
-            'Connected players :',
+            "Connected players :",
         ]
 
-    def draw(self, players:list=[]):
+    def draw(self, players: list = None):
         """This function is used to draw the lobby."""
         self.screen.fill((0, 0, 0))
+        if not players:
+            players = []
 
         space = 50
 
@@ -29,11 +32,11 @@ class LobbyPage:
             y += space
 
         for player in players:
-            text = self.font.render(f'{player[0]}:{player[1]}', True, (255, 255, 255))
+            text = self.font.render(f"{player[0]}:{player[1]}", True, (255, 255, 255))
             text_rect = text.get_rect(center=(self.screen.get_width() // 2, y))
             self.screen.blit(text, text_rect)
             y += space
-        
+
         # start button
         hitboxes = []
 

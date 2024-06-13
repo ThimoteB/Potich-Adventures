@@ -8,5 +8,17 @@ TICK_RATE = 60
 TICK_DURATION_MS = int(1 / TICK_RATE * 1000)
 SOUND = False
 
-HOST:str = "127.0.0.1"
-PORT:int = 44440
+# Network constants (used by server and client)
+PAYLOAD_SIZE = 4096
+
+# Server constants (server.py)
+HOST: str = "127.0.0.1"
+PORT: int = 44440
+
+# Card constants (card.py)
+CARD_SLOT_WIDTH = 150
+CARD_SLOT_HEIGHT = 220
+
+# Key constants (key.py)
+KEY_SLOT_WIDTH = 80
+KEY_SLOT_HEIGHT = 80

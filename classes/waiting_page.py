@@ -1,4 +1,5 @@
 """ Page for the credits of the game """
+
 import pygame
 from game_constants.consts import PORT
 
@@ -10,7 +11,7 @@ class WaitingPage:
         self.screen = screen
         self.font = pygame.font.Font(None, 64)
         self.waiting_text = [
-            f'Waiting for host at {ip}:{PORT}...',
+            f"Waiting for host at {ip}:{PORT}...",
         ]
 
     def draw(self):

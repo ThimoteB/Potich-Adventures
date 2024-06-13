@@ -1,6 +1,4 @@
 """ This module contains the Enemy class."""
-import pygame
-from game_constants.consts import GRAPHICAL_TILE_SIZE
 
 from .entity import Entity
 

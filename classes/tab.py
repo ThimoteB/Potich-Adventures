@@ -1,4 +1,5 @@
 """ This file contains the tab class that will be used to create the tab. """
+
 import pygame  # pylint: disable=import-error
 from .greyzone import GreyZone  # pylint: disable=no-name-in-module
 from .blackzone import BlackZone  # pylint: disable=no-name-in-module
@@ -299,7 +300,7 @@ class Tab(pygame.sprite.Sprite):
         """
         card_slot = self.card_group.sprites()[index]
         clicked_card = card_slot.item
-        if clicked_card != None:
+        if clicked_card is not None:
             if clicked_card.selected:
                 # If the clicked card is already selected, unselect it
                 clicked_card.toggle_select()
@@ -326,17 +327,17 @@ class Tab(pygame.sprite.Sprite):
         Returns:
             Card: the card selected
         """
-        """
-        elif pygame.key.get_pressed()[pygame.K_4]:
-                    if len(self.queue.queue[0].cards) >= 4:
-                        card_selected = self.queue.queue[0].cards[3]
-                        self.unhilight()
-                        highlighted_cells = []
-                        self.tab.unselect_all_cards()
-                        self.tab.bottom_right_slot.item.toggle_select()
-                        self.tab.draw_cards(self.screen)
-                        pygame.display.flip()
-        """
+
+        # elif pygame.key.get_pressed()[pygame.K_4]:
+        #             if len(self.queue.queue[0].cards) >= 4:
+        #                 card_selected = self.queue.queue[0].cards[3]
+        #                 self.unhilight()
+        #                 highlighted_cells = []
+        #                 self.tab.unselect_all_cards()
+        #                 self.tab.bottom_right_slot.item.toggle_select()
+        #                 self.tab.draw_cards(self.screen)
+        #                 pygame.display.flip()
+
         match index:
             case 1:
                 pass

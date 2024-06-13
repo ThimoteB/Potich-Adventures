@@ -80,27 +80,6 @@ class Entity(ObjectBase):
 
         return target.take_damage(total_damage)
 
-    def draw(
-        self, x: int, y: int, surface: pygame.Surface, camera: tuple[int, int]
-    ) -> None:
-        super().draw(x, y, surface, camera)
-
-        dest_x = x - camera[0]
-        dest_y = y - camera[1]
-
-        if self.draw_healthbar:
-            self.healthbar.fill((255, 0, 0))
-            self.healthbar.fill(
-                (0, 255, 0),
-                (
-                    0,
-                    0,
-                    self.healthbar.get_width() * (self.health / self.max_health),
-                    self.healthbar.get_height(),
-                ),
-            )
-            surface.blit(self.healthbar, (dest_x, dest_y - 10))
-
     def write_logfile(self, log_file: str, text: str):
         with open(log_file, "r+") as file:
             lines = file.readlines()

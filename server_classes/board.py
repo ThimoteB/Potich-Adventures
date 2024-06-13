@@ -1,6 +1,5 @@
 """ This file contains the board class that will be used to create the board and the cells."""
 
-
 from __future__ import annotations
 from collections import defaultdict
 
@@ -8,20 +7,17 @@ import random
 import logging
 import math
 import pytmx
-import pygame
-from game_constants.consts import GRAPHICAL_TILE_SIZE
 from .cell import Cell
 from .map_object import Tile, MapKey, Pawn, Enemy, MapCard
+
 # from .map_object import AnimatedTile
-from .camera import Camera
 from .card import list_of_cards  # pylint: disable=wildcard-import
 from .key import list_of_keys  # pylint: disable=wildcard-import
-from .card import Card
 
 log = logging.getLogger(__name__)
 
 
-class Board(pygame.sprite.Sprite):
+class Board:
     """This class is used to create the board and the cells.
 
     Args:
@@ -54,6 +50,9 @@ class Board(pygame.sprite.Sprite):
         # self.camera = camera
         self.rect = rect
         self.healing_tiles = []
+        self.item_spawn: dict[
+            str : list[list[str, int, int, int]], str : list[list[str, int, int, int]]
+        ] = {}
 
     def get_coordinates_object(self, game_object: object) -> tuple[int, int] | None:
         """This function is used to get the coordinates of an object on the board.
@@ -146,7 +145,6 @@ class Board(pygame.sprite.Sprite):
         if self.cells[new_y][new_x].has_enemy():
             # Attack the enemy
             enemy = self.cells[new_y][new_x].game_object
-            name = enemy.name
 
             pawn.attack_target(enemy)
             enemy.take_damage(pawn.attack)
@@ -247,10 +245,26 @@ class Board(pygame.sprite.Sprite):
         return []
 
     def heuristic(self, current, goal):
-        # Using Manhattan distance for heuristic
+        """Provides a heuristic for the A* algorithm. Uses Manhattan distance.
+
+        Args:
+            current (tuple): current position
+            goal (tuple): goal position
+
+        Returns:
+            int: heuristic value"""
         return abs(current[0] - goal[0]) + abs(current[1] - goal[1])
 
     def move_enemy(self, enemy: Enemy, count_player: int) -> bool:
+        """This function is used to move the enemy.
+
+        Args:
+            enemy (Enemy): represents the enemy
+            count_player (int): represents the number of players
+
+        Returns:
+            bool: True if the enemy was moved, False otherwise
+        """
         ia = enemy.ia
         if ia:
             match count_player:
@@ -368,16 +382,6 @@ class Board(pygame.sprite.Sprite):
     #                     1,
     #                 )
 
-    def tick(self, frame_id: int) -> None:
-        """Updates the boards depending on the frame id.
-
-        Args:
-            frame_id (int): current frame id
-        """
-        for row in self.cells:
-            for cell in row:
-                cell.tick(frame_id)
-
     # def resize_tiles(self, width: int, height: int) -> None:
     #     """This function is used to resize the tiles.
 
@@ -395,12 +399,9 @@ class Board(pygame.sprite.Sprite):
         Args:
             tmx_file (str): represents the tmx file
         """
-        self.item_spawn:dict[str: list[list[str, int, int, int]], 
-                        str: list[list[str, int, int, int]]
-                        ] = {
-            "card_map_list": [],
-            "key_map_list": []
-        }
+        self.item_spawn: dict[
+            str : list[list[str, int, int, int]], str : list[list[str, int, int, int]]
+        ] = {"card_map_list": [], "key_map_list": []}
 
         tmx_data = pytmx.TiledMap(tmx_file)
         tmx_gids_to_og = tmx_data.tiledgidmap
@@ -460,13 +461,15 @@ class Board(pygame.sprite.Sprite):
                     # normal tile
                     self.cells[y][x].add_layer(
                         Tile(
-                            props_catalogue[gid].get("walkable", True)
-                            if gid in props_catalogue
-                            else True,
+                            (
+                                props_catalogue[gid].get("walkable", True)
+                                if gid in props_catalogue
+                                else True
+                            ),
                             # tmx_data.get_tile_image_by_gid(gid),
                         )
                     )
-                    
+
         # Get all card spawners
         card_spawns: dict[int : list[tuple[int, int]]] = defaultdict(list)
         layer = tmx_data.get_layer_by_name("loot")
@@ -504,11 +507,12 @@ class Board(pygame.sprite.Sprite):
                 card = MapCard(
                     card_random,
                 )
-                
 
                 # card.resize(32, 32)
                 self.cells[coordinate[1]][coordinate[0]].game_object = card
-                self.item_spawn["card_map_list"].append([card.card.name, coordinate[1], coordinate[0], tmx_gid])
+                self.item_spawn["card_map_list"].append(
+                    [card.card.name, coordinate[1], coordinate[0], tmx_gid]
+                )
 
         # Get all key spawners
         key_spawns: dict[int : list[tuple[int, int]]] = defaultdict(list)
@@ -543,7 +547,9 @@ class Board(pygame.sprite.Sprite):
 
             # key.resize(32, 32)
             self.cells[coordinates[1]][coordinates[0]].game_object = key
-            self.item_spawn["key_map_list"].append([key.key.name, coordinates[1], coordinates[0], tmx_gid])
+            self.item_spawn["key_map_list"].append(
+                [key.key.name, coordinates[1], coordinates[0], tmx_gid]
+            )
 
         # get the tile props ("heal") for the layer "campfire"
         layer = tmx_data.get_layer_by_name("campfire")
@@ -558,13 +564,13 @@ class Board(pygame.sprite.Sprite):
         # for row in self.cells:
         #     for cell in row:
         #         cell.resize(GRAPHICAL_TILE_SIZE, GRAPHICAL_TILE_SIZE)
-    
-    def get_item_spawn(self) -> dict[str: list[list[str, int, int]], 
-                                    str: list[list[str, int, int]]
-                                    ]:
+
+    def get_item_spawn(
+        self,
+    ) -> dict[str : list[list[str, int, int]], str : list[list[str, int, int]]]:
         """This function is used to get the item spawn."""
         return self.item_spawn
-        
+
     def get_all_elements(self) -> list[list[str, int, int, int]]:
         """This function is used to get all the elements on the board.
 
@@ -575,16 +581,23 @@ class Board(pygame.sprite.Sprite):
         for row in self.cells:
             for cell in row:
                 if cell.game_object:
-                    if isinstance(cell.game_object, Pawn) or isinstance(cell.game_object, Enemy):
-                        elements.append([cell.game_object.name, cell.game_object.health, cell.y, cell.x])
+                    if isinstance(cell.game_object, Pawn) or isinstance(
+                        cell.game_object, Enemy
+                    ):
+                        elements.append(
+                            [
+                                cell.game_object.name,
+                                cell.game_object.health,
+                                cell.y,
+                                cell.x,
+                            ]
+                        )
         return elements
 
     # Classmethods
 
     @classmethod
-    def from_tmx(
-        cls, tmx_file: str, rect: bool = False
-    ) -> Board:
+    def from_tmx(cls, tmx_file: str, rect: bool = False) -> Board:
         """This function is used to create the board from a tmx file.
 
         Args:

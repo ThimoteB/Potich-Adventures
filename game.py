@@ -56,7 +56,13 @@ class Game:
         self.camera = self.init_camera(mapchoose)
         self.camera.set_bounds(self.screen.get_width(), self.screen.get_height())
         self.map_chosen = mapchoose
-        self.board = Board.from_tmx("maps/" + self.map_chosen, self.camera, False)
+        self.board = Board.from_tmx(
+            tmx_file="maps/" + self.map_chosen,
+            camera=self.camera,
+            rect=False,
+            card_map_list=[],
+            key_map_list=[],
+        )
         self.board.resize_tiles(GRAPHICAL_TILE_SIZE, GRAPHICAL_TILE_SIZE)
         self.tab = Tab(self.screen, 50, self.screen.get_height(), 50)
         self.init_game_elements(mapchoose)
