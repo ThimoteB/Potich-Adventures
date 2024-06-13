@@ -24,6 +24,8 @@ class CreditsPage:
             "Lasagne Célian:",
             "Network Engineer",
             "----------",
+            "Justin De La Fontaine",
+            "Développeur",
         ]
 
     def draw(self):
