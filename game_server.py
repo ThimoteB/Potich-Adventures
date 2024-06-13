@@ -39,7 +39,7 @@ class GameServer:
     This class is used to create the main loop of the game.
     """
 
-    def __init__(self, read_list:list[socket.socket], mapchoose="map1.tmx", fog=False):
+    def __init__(self, read_list:list[socket.socket], mapchoose="map_courte.tmx", fog=False):
         """Sockets list -> first socket is the server socket, the others are client sockets"""
         self.read_list: list[socket.socket] = read_list
         self.read_list[0].setblocking(True)
