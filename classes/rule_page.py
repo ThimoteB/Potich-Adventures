@@ -1,4 +1,5 @@
 """ This file contains the map page class that will be used to create the map page."""
+
 import pygame
 
 

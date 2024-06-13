@@ -1,4 +1,5 @@
 """ Page for selecting either online or solo """
+
 import pygame
 
 
@@ -8,10 +9,7 @@ class GamemodePage:
     def __init__(self, screen):
         self.screen = screen
         self.font = pygame.font.Font(None, 48)
-        self.gamemode_options = [
-            "Solo",
-            "Online"
-        ]  # Game mode options
+        self.gamemode_options = ["Solo", "Online"]  # Game mode options
         self.selected_gamemode = 0  # Choix actuellement sélectionné
 
         self.white = (255, 255, 255)

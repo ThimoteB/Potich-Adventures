@@ -1,9 +1,11 @@
-import select
 import socket
+import select
+
+from game_constants.consts import PAYLOAD_SIZE
 
 server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-server_socket.bind(('', 44440))
+server_socket.bind(("", 44440))
 server_socket.listen(5)
 print("Listening on", server_socket.getsockname())
 
@@ -16,7 +18,7 @@ while True:
             read_list.append(client_socket)
             print("Connection from", address)
         else:
-            data = s.recv(1024)
+            data = s.recv(PAYLOAD_SIZE)
             print("received:", data)
             if data:
                 s.send(data)

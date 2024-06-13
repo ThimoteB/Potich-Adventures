@@ -1,5 +1,6 @@
 """ This file contains the Player class."""
-from classes.card import Card
+
+from .card import Card
 
 
 class Player:

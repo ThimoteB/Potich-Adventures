@@ -45,6 +45,7 @@ class Cell:  # pylint: disable=too-many-instance-attributes
 
     @property
     def heal_value(self) -> int:
+        """Returns the heal value of the cell."""
         return self._heal_value
 
     @heal_value.setter

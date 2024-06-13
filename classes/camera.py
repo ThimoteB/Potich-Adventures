@@ -1,4 +1,5 @@
 """This module contains the Camera class."""
+
 from math import inf as infinite
 from typing import Any
 from game_constants.consts import GRAPHICAL_TILE_SIZE

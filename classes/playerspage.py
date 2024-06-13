@@ -1,4 +1,5 @@
 """ Page for selecting the number of players """
+
 import pygame
 
 

@@ -1,4 +1,5 @@
 """ This module is used to create the black zone which is the hidden zone of the tab. """
+
 import logging
 
 import pygame
