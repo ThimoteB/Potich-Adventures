@@ -4,7 +4,7 @@ import logging
 from discord import SyncWebhook, Embed, Colour
 
 
-class DiscordLogHandler(logging.Handler):
+class DiscordHandler(logging.Handler):
     """A custom logging handler that sends logs to a discord webhook"""
 
     def __init__(self, *args, **kwargs):
@@ -39,5 +39,5 @@ class DiscordLogHandler(logging.Handler):
 if __name__ == "__main__":
     logger = logging.getLogger("discord_logger")
     logger.setLevel(logging.INFO)
-    logger.addHandler(DiscordLogHandler())
+    logger.addHandler(DiscordHandler())
     logger.info("Hello")

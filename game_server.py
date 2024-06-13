@@ -29,11 +29,8 @@ from server_classes.card import (
     card_plume,
 )
 
-from discord_handler import DiscordLogHandler
-
 
 log = logging.getLogger(__name__)
-log.addHandler(DiscordLogHandler())
 
 
 class GameServer:
