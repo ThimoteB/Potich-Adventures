@@ -505,16 +505,19 @@ class GameServer:
             bool: False if the receive fail
         """
 
-        readable, _, _ = select.select(self.read_list, [], [])
-        for s in readable:  # for each socket (server/client)
-            if s is not self.read_list[0]:
-                data: bytes = s.recv(PAYLOAD_SIZE)
-                if not data:
-                    return False
-                self.players[self.read_list.index(s) - 1].update(
-                    json.loads(data.decode())
-                )
-                log.debug("Received: %s", self.players[self.read_list.index(s) - 1])
+        received: bool = False
+        while not received:
+            readable, _, _ = select.select(self.read_list, [], [])
+            for s in readable:  # for each socket (server/client)
+                if s is not self.read_list[0]:
+                    data: bytes = s.recv(PAYLOAD_SIZE)
+                    if not data:
+                        return False
+                    self.players[self.read_list.index(s) - 1].update(
+                        json.loads(data.decode())
+                    )
+                    log.debug("Received: %s", self.players[self.read_list.index(s) - 1])
+                    received = True
         return True
 
         # cli_number:int = self.data["current_player"]+1
