@@ -288,6 +288,11 @@ class Board:
         enemy_y, enemy_x = self.get_coordinates_object(enemy)
 
         self.check_enemy_attack(enemy_x, enemy_y)
+        self.check_enemy_card(
+            enemy_x,
+            enemy_y,
+            enemy,
+        )
 
         if ia:
             # get the current ememy's goal
@@ -391,6 +396,17 @@ class Board:
             if not enemy.attack_target(closest_player.game_object):
                 # The player is dead, remove it from the board
                 closest_player.remove_object()
+
+    def check_enemy_card(self, enemy_x: int, enemy_y: int, enemy: Enemy) -> None:
+        # Vérifie si un ennemi peut ramasser une carte et si oui alors déplace l'ennemi sur la carte
+        for row in self.cells:
+            for cell in row:
+                if cell.game_object and isinstance(cell.game_object, MapCard):
+                    distance = math.sqrt(
+                        (enemy_y - cell.y) ** 2 + (enemy_x - cell.x) ** 2
+                    )
+                    if distance <= 1:
+                        self.move_or_attack(enemy, cell.y, cell.x, (enemy_y, enemy_x))
 
     # def draw(
     #     self, surface: pygame.surface.Surface  # pylint: disable=c-extension-no-member
