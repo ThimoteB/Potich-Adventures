@@ -33,7 +33,7 @@ from server_classes.card import (
 
 log = logging.getLogger(__name__)
 discord_handler = DiscordHandler()
-log.addHandler(discord_handler)
+# log.addHandler(discord_handler)
 
 
 class GameServer:

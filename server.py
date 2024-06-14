@@ -32,8 +32,8 @@ root_logger.setLevel(logging.DEBUG)
 root_logger.propagate = False
 log = logging.getLogger(__name__)
 
-discord_handler = DiscordHandler()
-log.addHandler(discord_handler)
+# discord_handler = DiscordHandler()
+# log.addHandler(discord_handler)
 
 
 parser = argparse.ArgumentParser()
