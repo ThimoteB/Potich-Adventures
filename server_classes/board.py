@@ -292,17 +292,17 @@ class Board:
         if ia:
             # get the current ememy's goal
             goal = enemy.goal
-            if goal is None :
+            if goal is None:
                 enemy.goal = playerGoal()
             elif random.random() >= goal.change_probability:
                 if isinstance(goal, cardGoal):
                     enemy.goal = playerGoal()
                 else:
                     enemy.goal = cardGoal()
-            
+
             # change proba for this move
             enemy.goal.regression()
-            print(enemy.name,enemy.goal.name, enemy.goal)
+            print(enemy.name, enemy.goal.name, enemy.goal)
 
             ##############################
             if isinstance(enemy.goal, playerGoal):
@@ -471,17 +471,33 @@ class Board:
                 log.error("Layer %s is not a tile layer", layer.name)
                 continue
             for x, y, gid in layer:
-                if gid in props_catalogue and props_catalogue[gid]["frames"]:
-                    self.cells[y][x].add_layer(
-                        Tile(
-                            (
-                                props_catalogue[gid].get("walkable", True)
-                                if gid in props_catalogue
-                                else True
-                            ),
-                            # tmx_data.get_tile_image_by_gid(gid),
-                        )
+                # if gid in props_catalogue and props_catalogue[gid]["frames"]:
+                #     # animated tile
+                #     frames = []
+                #     frame_durations = []
+                #     for frame in props_catalogue[gid]["frames"]:
+                #         frames.append(tmx_data.get_tile_image_by_gid(frame.gid))
+                #         frame_durations.append(frame.duration)
+
+                #     # self.cells[y][x].add_layer(
+                #     #     AnimatedTile(
+                #     #         props_catalogue[gid].get("walkable", True),
+                #     #         frames,
+                #     #         frame_durations,
+                #     #     )
+                #     # )
+                # else:
+                # normal tile
+                self.cells[y][x].add_layer(
+                    Tile(
+                        (
+                            props_catalogue[gid].get("walkable", True)
+                            if gid in props_catalogue
+                            else True
+                        ),
+                        # tmx_data.get_tile_image_by_gid(gid),
                     )
+                )
 
         # Get all card spawners
         card_spawns: dict[int : list[tuple[int, int]]] = defaultdict(list)
