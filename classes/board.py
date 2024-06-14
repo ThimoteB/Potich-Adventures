@@ -662,7 +662,10 @@ class Board(pygame.sprite.Sprite):
                                 self.cells[element[2]][element[3]].add_enemy(enemy)
                                 found = True
                     if not found:
-                        cell.remove_object()
+                        if isinstance(cell.game_object, Pawn) or isinstance(
+                            cell.game_object, Enemy
+                        ):
+                            cell.remove_object()
 
         for row in self.cells:
             for cell in row:
