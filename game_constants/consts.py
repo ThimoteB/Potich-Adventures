@@ -12,7 +12,7 @@ SOUND = False
 PAYLOAD_SIZE = 123456
 
 # Server constants (server.py)
-HOST: str = "127.0.0.1"
+HOST: str = "0.0.0.0"
 PORT: int = 44440
 
 # Card constants (card.py)

@@ -9,6 +9,7 @@ import argparse
 
 from rich.logging import RichHandler
 
+from discord_handler import DiscordHandler
 from game_server import GameServer
 from game_constants.consts import HOST, PORT, PAYLOAD_SIZE
 
@@ -26,9 +27,13 @@ file_handler.setFormatter(
 )
 root_logger.addHandler(file_handler)
 
+
 root_logger.setLevel(logging.DEBUG)
 root_logger.propagate = False
 log = logging.getLogger(__name__)
+
+discord_handler = DiscordHandler()
+log.addHandler(discord_handler)
 
 
 parser = argparse.ArgumentParser()
