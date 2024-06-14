@@ -302,7 +302,12 @@ class Board:
 
             # change proba for this move
             enemy.goal.regression()
-            print(enemy.name, enemy.goal.name, enemy.goal)
+            log.debug(
+                "Name: %s Goal name: %s Goal: %s",
+                enemy.name,
+                enemy.goal.name,
+                enemy.goal,
+            )
 
             ##############################
             if isinstance(enemy.goal, playerGoal):
