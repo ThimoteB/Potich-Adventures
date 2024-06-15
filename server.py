@@ -51,7 +51,6 @@ parser.add_argument(
     help="Map file to load. Default is 'map_courte'",
     default="map_courte",
     required=False,
-    nargs=1,
 )
 args = parser.parse_args()
 
@@ -144,7 +143,8 @@ if __name__ == "__main__":
     while True:
         try:
             server = Server(args.max_players)
-            game = GameServer(server.start(), args.map[0] + ".tmx")
+            map_file = args.map 
+            game = GameServer(server.start(), f"{map_file}.tmx")
             game.run()
         except Exception as e:
             server.close()
